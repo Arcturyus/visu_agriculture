@@ -2,23 +2,27 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Analyse Viande - Projet Dataviz</title>
+    <title>Visualisation Commerce Viande</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-    <div id="ui-container">
-        <!-- Ton sélecteur Fancy -->
-        <div class="fancy-container">
-            <label class="fancy-label">🔥 CHOISIR UN INDICATEUR 🔥</label>
-            <select id="selectedIndicateur" class="fancy-select">
-                <!-- Les options seront générées par JS -->
-            </select>
+    <nav class="navbar">
+        <div class="nav-brand"> Viandes🍖🍖🍖</div>
+        <div class="nav-links">
+            <button class="nav-btn active" data-target="page-heatmap">Analyse Temporelle</button>
+            <button class="nav-btn" data-target="page-map">Carte Mondiale</button>
         </div>
-    </div>
+    </nav>
 
-    <div class="filters-grid">
+    <div id="ui-container">
+        <div class="fancy-container">
+            <label class="fancy-label">🔥 INDICATEUR 🔥</label>
+            <select id="selectedIndicateur" class="fancy-select"></select>
+        </div>
+
+        <div class="filters-grid">
         <fieldset id="filtre_pays">
             <legend>Filtrage géographique</legend>
             <label><input type="radio" name="pays" value="exclure" checked> Exclure 'Monde'</label>
@@ -40,10 +44,18 @@
             <label><input type="radio" name="temps" value="uniquement"> Uniquement 'TOTAL Annuel'</label>
         </fieldset>
     </div>
+    </div>
 
-    <!-- Conteneur pour le graphique D3 -->
-    <div id="chart-container"></div>
+    <!-- PAGE 1 : HEATMAP -->
+    <div id="page-heatmap" class="page-section active">
+        <div id="chart-container"></div>
+    </div>
 
+    <!-- PAGE 2 : CARTE MONDE -->
+    <div id="page-map" class="page-section" style="display: none;">
+        <div id="map-container"></div>
+        <div id="map-tooltip" class="tooltip" style="opacity:0;"></div>
+    </div>
 
     <script src="js/main.js" type="module"></script>
 </body>

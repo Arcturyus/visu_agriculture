@@ -1,18 +1,9 @@
-/**
- * PROJET DATAVIZ - Analyse du commerce de la viande
- * Fichier principal : Gestion des filtres et rendu de la Heatmap
- */
+import { drawHeatmap } from './heatmap.js'; // Supposons que tu as bougé le code heatmap ici
+import { drawWorldMap } from './worldMap.js';
 
-// 1. Configuration des dimensions
-const margin = { top: 60, right: 50, bottom: 100, left: 250 };
-const width = 1000 - margin.left - margin.right;
-const height = 650 - margin.top - margin.bottom;
+let globalData = [];
+let currentPage = "page-heatmap"; // Page par défaut
 
-// Listes de référence pour l'ordre et les libellés
-const ordresMois = [
-    "Janvier", "Février", "Mars", "Avril", "Mai", "Juin", 
-    "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
-];
 
 const indicateurs = [
     "Exportations de viandes et préparations (téc)",
@@ -23,220 +14,117 @@ const indicateurs = [
     "Solde des échanges de viandes et préparations (€)"
 ];
 
-let globalData = []; // Stockage des données chargées
 
-// 2. Chargement des données avec nettoyage
 d3.csv("data/comexviande_pivot.csv", d => {
-    // Nettoyage crucial des chaînes de caractères pour éviter les décalages
-    if (d.N053_LIB) d.N053_LIB = d.N053_LIB.trim();
-    if (d.N500_LIB) d.N500_LIB = d.N500_LIB.trim();
-    if (d.COMEXVIANDE_DIM2_LIB) d.COMEXVIANDE_DIM2_LIB = d.COMEXVIANDE_DIM2_LIB.trim();
-    return d3.autoType(d);
-}).then(data => {
-    globalData = data;
-    console.log("Données chargées et nettoyées", globalData.length, "lignes.");
+    // Cette fonction s'exécute pour CHAQUE ligne du CSV avant de continuer
+    
+    // Nettoyage des textes (enlever les espaces blancs au début/fin)
+    // C'est crucial pour que "Janvier" dans le code corresponde à " Janvier" dans le CSV
+    if (d.N053_LIB) d.N053_LIB = d.N053_LIB.trim();             // La colonne des mois
+    if (d.N500_LIB) d.N500_LIB = d.N500_LIB.trim();             // La colonne des types de viande
+    if (d.COMEXVIANDE_DIM2_LIB) d.COMEXVIANDE_DIM2_LIB = d.COMEXVIANDE_DIM2_LIB.trim(); // La colonne Pays
 
-    // Initialisation du menu indicateur
+    // Conversion automatique des types (les nombres deviennent des nombres JS)
+    return d3.autoType(d);
+
+}).then(data => {
+    // Une fois que TOUT le fichier est chargé et nettoyé :
+    
+    globalData = data; // On stocke les données dans la variable globale
+    console.log("Données chargées avec succès :", globalData.length, "lignes.");
+    console.log("Exemple de ligne :", globalData[0]);
+    initInterface(); 
+    updateApp(); 
+
+}).catch(error => {
+    // En cas d'erreur (fichier mal nommé, 404 sur GitHub Pages, etc.)
+    console.error("Erreur lors du chargement du CSV :", error);
+    
+    // Petit message visuel pour toi
+    d3.select("#chart-container")
+      .append("div")
+      .attr("class", "error-msg")
+      .html(`<h3>⚠️ Erreur de chargement</h3>
+             <p>Le fichier CSV n'a pas pu être chargé. Vérifiez le chemin : <code>data/comexviande_pivot.csv</code></p>
+             <p>Détails : ${error.message}</p>`);
+});
+
+
+// --- 2. FONCTION POUR INITIALISER L'INTERFACE ---
+
+function initInterface() {
     const select = d3.select("#selectedIndicateur");
+    
+    select.selectAll("option").remove();
+
     select.selectAll("option")
-        .data(indicateurs)
+        .data(indicateurs) 
         .enter()
         .append("option")
         .text(d => d)
         .attr("value", d => d);
 
-    // Écouteur global sur tous les changements de filtres (Select + Radios)
-    d3.selectAll("#selectedIndicateur, input[type=radio]").on("change", updateApp);
+    d3.selectAll("input[type=radio]").on("change", () => {
+        console.log("Filtre changé !");
+        updateApp();
+    });
 
-    // Premier rendu
+    select.on("change", () => {
+        console.log("Indicateur changé !");
+        updateApp();
+    });
+}
+
+// GESTION DES ONGLETS
+d3.selectAll(".nav-btn").on("click", function() {
+    // 1. Gestion visuelle des boutons
+    d3.selectAll(".nav-btn").classed("active", false);
+    d3.select(this).classed("active", true);
+
+    // 2. Affichage de la bonne div
+    const targetId = d3.select(this).attr("data-target");
+    currentPage = targetId;
+
+    d3.selectAll(".page-section").style("display", "none");
+    d3.select("#" + targetId).style("display", "block");
+
+    // 3. Redessiner le graphique concerné
     updateApp();
-}).catch(err => {
-    console.error("Erreur de chargement du fichier CSV:", err);
 });
 
-/**
- * Fonction de mise à jour : récupère les filtres et prépare les données
- */
+// LA FONCTION DE MISE A JOUR CENTRALISÉE
 function updateApp() {
     const indicateur = d3.select("#selectedIndicateur").property("value");
     const modePays = d3.select('input[name="pays"]:checked').node().value;
     const modeViande = d3.select('input[name="viande"]:checked').node().value;
     const modeTemps = d3.select('input[name="temps"]:checked').node().value;
 
-    // --- FILTRAGE DES DONNÉES ---
-    let filtered = globalData;
-
+    let filteredData = globalData; 
     // Filtre Géographique (Monde)
     if (modePays === "exclure") {
-        filtered = filtered.filter(d => d.COMEXVIANDE_DIM2_LIB !== "Monde");
+        filteredData = filteredData.filter(d => d.COMEXVIANDE_DIM2_LIB !== "Monde");
     } else if (modePays === "uniquement") {
-        filtered = filtered.filter(d => d.COMEXVIANDE_DIM2_LIB === "Monde");
+        filteredData = filteredData.filter(d => d.COMEXVIANDE_DIM2_LIB === "Monde");
     }
 
     // Filtre Type Viande (TOTAL VIANDES)
     if (modeViande === "exclure") {
-        filtered = filtered.filter(d => d.N500_LIB !== "TOTAL VIANDES");
+        filteredData = filteredData.filter(d => d.N500_LIB !== "TOTAL VIANDES");
     } else if (modeViande === "uniquement") {
-        filtered = filtered.filter(d => d.N500_LIB === "TOTAL VIANDES");
+        filteredData = filteredData.filter(d => d.N500_LIB === "TOTAL VIANDES");
     }
 
     // Filtre Temporel (TOTAL Annuel)
     if (modeTemps === "exclure") {
-        filtered = filtered.filter(d => d.N053_LIB !== "TOTAL Annuel");
+        filteredData = filteredData.filter(d => d.N053_LIB !== "TOTAL Annuel");
     } else if (modeTemps === "uniquement") {
-        filtered = filtered.filter(d => d.N053_LIB === "TOTAL Annuel");
+        filteredData = filteredData.filter(d => d.N053_LIB === "TOTAL Annuel");
     }
 
-    drawHeatmap(filtered, indicateur, modeTemps);
-}
-
-/**
- * Fonction de dessin D3
- */
-function drawHeatmap(data, indicateur, modeTemps) {
-    const container = d3.select("#chart-container");
-    container.selectAll("*").remove();
-
-    if (data.length === 0) {
-        container.append("p").text("Aucune donnée disponible pour ces filtres.");
-        return;
+    // DESSINER SELON LA PAGE ACTIVE
+    if (currentPage === "page-heatmap") {
+        drawHeatmap(filteredData, indicateur, modeTemps); // Ta fonction d'avant
+    } else if (currentPage === "page-map") {
+        drawWorldMap(filteredData, indicateur, "#map-container");
     }
-
-    // --- PRÉPARATION DES DONNÉES POUR LA HEATMAP ---
-    
-    // 1. Identifier le Top 8 des viandes par volume absolu pour cet indicateur
-    const meatAggregated = d3.rollup(
-        data.filter(d => d[indicateur] != null),
-        v => d3.sum(v, d => Math.abs(d[indicateur])),
-        d => d.N500_LIB
-    );
-
-    const top8Meats = Array.from(meatAggregated.keys())
-        .sort((a, b) => meatAggregated.get(b) - meatAggregated.get(a))
-        .slice(0, 8);
-
-    // 2. Calculer la moyenne par viande et par mois
-    const heatmapDataMap = d3.rollup(
-        data.filter(d => top8Meats.includes(d.N500_LIB) && d[indicateur] != null),
-        v => d3.mean(v, d => d[indicateur]),
-        d => d.N500_LIB,
-        d => d.N053_LIB
-    );
-
-    const flatData = [];
-    heatmapDataMap.forEach((moisMap, type) => {
-        moisMap.forEach((value, mois) => {
-            flatData.push({ type, mois, value });
-        });
-    });
-
-    // --- CONSTRUCTION DU DOMAINE X (SYNCHRONISÉ) ---
-    let xDomain = [];
-    if (modeTemps === "uniquement") {
-        xDomain = ["TOTAL Annuel"];
-    } else if (modeTemps === "inclure") {
-        xDomain = [...ordresMois, "TOTAL Annuel"];
-    } else {
-        xDomain = ordresMois;
-    }
-
-    // Filtrer flatData pour ne garder que ce qui est dans le domaine (évite les décalages)
-    const finalData = flatData.filter(d => xDomain.includes(d.mois));
-
-    // --- SCALES (ÉCHELLES) ---
-    const svg = container.append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-        .append("g")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
-
-    const x = d3.scaleBand()
-        .range([0, width])
-        .domain(xDomain)
-        .padding(0.05);
-
-    const y = d3.scaleBand()
-        .range([height, 0])
-        .domain(top8Meats)
-        .padding(0.05);
-
-    // Choix de la couleur
-    const maxVal = d3.max(finalData, d => d.value) || 0;
-    const minVal = d3.min(finalData, d => d.value) || 0;
-
-    let colorScale;
-    if (indicateur.toLowerCase().includes("solde")) {
-        // Échelle divergente pour les soldes (Rouge = Déficit, Bleu = Excédent)
-        const limit = Math.max(Math.abs(minVal), Math.abs(maxVal));
-        colorScale = d3.scaleSequential()
-            .interpolator(d3.interpolateRdBu)
-            .domain([-limit, limit]);
-    } else {
-        // Échelle séquentielle pour Export/Import (Jaune à Bleu)
-        colorScale = d3.scaleSequential()
-            .interpolator(d3.interpolateYlGnBu)
-            .domain([minVal, maxVal]);
-    }
-
-    // --- AXES ---
-    svg.append("g")
-        .attr("transform", `translate(0,${height})`)
-        .call(d3.axisBottom(x))
-        .selectAll("text")
-        .attr("transform", "translate(-10,0)rotate(-30)")
-        .style("text-anchor", "end")
-        .style("font-size", "12px");
-
-    svg.append("g")
-        .call(d3.axisLeft(y))
-        .style("font-size", "12px");
-
-    // --- DESSIN DES CELLULES ---
-    svg.selectAll(".cell")
-        .data(finalData)
-        .enter()
-        .append("rect")
-        .attr("class", "cell")
-        .attr("x", d => x(d.mois))
-        .attr("y", d => y(d.type))
-        .attr("width", x.bandwidth())
-        .attr("height", y.bandwidth())
-        .style("fill", d => colorScale(d.value))
-        .style("stroke", d => d.mois === "TOTAL Annuel" ? "#333" : "#fff")
-        .style("stroke-width", d => d.mois === "TOTAL Annuel" ? "2px" : "1px")
-        .style("opacity", 0)
-        .transition()
-        .duration(600)
-        .style("opacity", 1);
-
-    // --- AFFICHAGE DES VALEURS ---
-    svg.selectAll(".cell-text")
-        .data(finalData)
-        .enter()
-        .append("text")
-        .attr("class", "cell-text")
-        .attr("x", d => x(d.mois) + x.bandwidth() / 2)
-        .attr("y", d => y(d.type) + y.bandwidth() / 2)
-        .attr("dy", ".35em")
-        .attr("text-anchor", "middle")
-        .style("font-size", "10px")
-        .style("font-weight", "bold")
-        .style("pointer-events", "none")
-        .style("fill", d => {
-            // Contraste auto : blanc sur foncé, noir sur clair
-            if (indicateur.toLowerCase().includes("solde")) {
-                 return Math.abs(d.value) > (maxVal * 0.6) ? "white" : "black";
-            }
-            return (d.value - minVal) / (maxVal - minVal) > 0.6 ? "white" : "black";
-        })
-        .text(d => Math.round(d.value).toLocaleString('fr-FR'));
-
-    // --- TITRE DU GRAPHIQUE ---
-    svg.append("text")
-        .attr("x", width / 2)
-        .attr("y", -margin.top / 2)
-        .attr("text-anchor", "middle")
-        .style("font-size", "16px")
-        .style("font-weight", "bold")
-        .text(`${indicateur} (Moyenne par type et période)`);
 }
