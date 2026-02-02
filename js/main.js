@@ -19,9 +19,9 @@ document.addEventListener('DOMContentLoaded', function() {
         //     console.error('Erreur lors du chargement des données:', error);
         // });
         
-        // Pour l'instant, initialiser avec des données de test
-        const testData = [];
-        initChart1(testData);
+        // Pour l'instant, initialiser avec des données vides en attendant les vraies données
+        const placeholderData = [];
+        initChart1(placeholderData);
     }
     
     // Initialiser l'application

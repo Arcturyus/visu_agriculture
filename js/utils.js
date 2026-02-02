@@ -3,6 +3,13 @@
 // Formatage de dates
 function formatDate(date, format = 'DD/MM/YYYY') {
     const d = new Date(date);
+    
+    // Vérifier si la date est valide
+    if (isNaN(d.getTime())) {
+        console.error('Invalid date:', date);
+        return '';
+    }
+    
     const day = String(d.getDate()).padStart(2, '0');
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const year = d.getFullYear();
@@ -41,7 +48,12 @@ function createOrdinalScale(domain, range) {
 
 // Formatage des nombres
 function formatNumber(num, decimals = 2) {
-    return parseFloat(num).toFixed(decimals);
+    const parsed = parseFloat(num);
+    if (isNaN(parsed)) {
+        console.error('Invalid number:', num);
+        return '0.' + '0'.repeat(decimals);
+    }
+    return parsed.toFixed(decimals);
 }
 
 // Fonction pour créer un tooltip
