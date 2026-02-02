@@ -2,28 +2,49 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visualisation Agriculture</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>Analyse Viande - Projet Dataviz</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <header>
-        <h1>Visualisation Agriculture</h1>
-    </header>
-    
-    <main>
-        <div id="chart1-container" class="chart-container">
-            <!-- Premier graphique D3 sera inséré ici -->
+
+    <div id="ui-container">
+        <!-- Ton sélecteur Fancy -->
+        <div class="fancy-container">
+            <label class="fancy-label">🔥 CHOISIR UN INDICATEUR 🔥</label>
+            <select id="selectedIndicateur" class="fancy-select">
+                <!-- Les options seront générées par JS -->
+            </select>
         </div>
-    </main>
-    
-    <footer>
-        <p>Projet de visualisation de données agricoles avec D3.js</p>
-    </footer>
-    
-    <script src="js/utils.js"></script>
-    <script src="js/chart1.js"></script>
-    <script src="js/main.js"></script>
+    </div>
+
+    <div class="filters-grid">
+        <fieldset id="filtre_pays">
+            <legend>Filtrage géographique</legend>
+            <label><input type="radio" name="pays" value="exclure" checked> Exclure 'Monde'</label>
+            <label><input type="radio" name="pays" value="inclure"> Inclure 'Monde'</label>
+            <label><input type="radio" name="pays" value="uniquement"> Uniquement 'Monde'</label>
+        </fieldset>
+
+        <fieldset id="filtre_total_viande">
+            <legend>Filtrage type de viande</legend>
+            <label><input type="radio" name="viande" value="exclure" checked> Exclure 'TOTAL VIANDES'</label>
+            <label><input type="radio" name="viande" value="inclure"> Inclure 'TOTAL VIANDES'</label>
+            <label><input type="radio" name="viande" value="uniquement"> Uniquement 'TOTAL VIANDES'</label>
+        </fieldset>
+
+        <fieldset id="filtre_total_annuel">
+            <legend>Filtrage temporel</legend>
+            <label><input type="radio" name="temps" value="exclure" checked> Exclure 'TOTAL Annuel'</label>
+            <label><input type="radio" name="temps" value="inclure"> Inclure 'TOTAL Annuel'</label>
+            <label><input type="radio" name="temps" value="uniquement"> Uniquement 'TOTAL Annuel'</label>
+        </fieldset>
+    </div>
+
+    <!-- Conteneur pour le graphique D3 -->
+    <div id="chart-container"></div>
+
+
+    <script src="js/main.js" type="module"></script>
 </body>
 </html>
