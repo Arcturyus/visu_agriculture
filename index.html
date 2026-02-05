@@ -2,59 +2,118 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Visualisation Commerce Viande</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ViandesViz - Dashboard</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-    <nav class="navbar">
-        <div class="nav-brand"> Viandes🍖🍖🍖</div>
-        <div class="nav-links">
-            <button class="nav-btn active" data-target="page-heatmap">Analyse Temporelle</button>
-            <button class="nav-btn" data-target="page-map">Carte Mondiale</button>
-        </div>
-    </nav>
+    <div class="app-container">
+        
+        <!-- 1. LA CARTE (En arrière-plan) -->
+        <div id="map-background"></div>
 
-    <div id="ui-container">
-        <div class="fancy-container">
-            <label class="fancy-label">🔥 INDICATEUR 🔥</label>
-            <select id="selectedIndicateur" class="fancy-select"></select>
-        </div>
+        <!-- 2. PANNEAU GAUCHE : Indicateurs & Filtres -->
+        <aside class="left-panel glass-panel">
+            <div class="panel-header">
+                <h2>🥩 Viandes</h2>
+            </div>
 
-        <div class="filters-grid">
-        <fieldset id="filtre_pays">
-            <legend>Filtrage géographique</legend>
-            <label><input type="radio" name="pays" value="exclure" checked> Exclure 'Monde'</label>
-            <label><input type="radio" name="pays" value="inclure"> Inclure 'Monde'</label>
-            <label><input type="radio" name="pays" value="uniquement"> Uniquement 'Monde'</label>
-        </fieldset>
+            <!-- Sélection d'Indicateur (Style "Cartes") -->
+            <div class="control-section">
+                <label class="section-title">Choisir l'indicateur</label>
+                <div class="indicator-grid" id="indicator-container">
+                    <!-- Généré en JS ou en dur ici, je le mets en dur pour la clarté -->
+                    
+                    <label class="indicator-card active">
+                        <input type="radio" name="indicateur" value="Exportations de viandes et préparations (téc)" checked>
+                        <i class="fas fa-ship"></i>
+                        <span>Exportation (Tèc)</span>
+                    </label>
 
-        <fieldset id="filtre_total_viande">
-            <legend>Filtrage type de viande</legend>
-            <label><input type="radio" name="viande" value="exclure" checked> Exclure 'TOTAL VIANDES'</label>
-            <label><input type="radio" name="viande" value="inclure"> Inclure 'TOTAL VIANDES'</label>
-            <label><input type="radio" name="viande" value="uniquement"> Uniquement 'TOTAL VIANDES'</label>
-        </fieldset>
+                    <label class="indicator-card">
+                        <input type="radio" name="indicateur" value="Exportations de viandes et préparations (€)">
+                        <i class="fas fa-euro-sign"></i>
+                        <span>Exportation (€)</span>
+                    </label>
 
-        <fieldset id="filtre_total_annuel">
-            <legend>Filtrage temporel</legend>
-            <label><input type="radio" name="temps" value="exclure" checked> Exclure 'TOTAL Annuel'</label>
-            <label><input type="radio" name="temps" value="inclure"> Inclure 'TOTAL Annuel'</label>
-            <label><input type="radio" name="temps" value="uniquement"> Uniquement 'TOTAL Annuel'</label>
-        </fieldset>
-    </div>
-    </div>
+                    <label class="indicator-card">
+                        <input type="radio" name="indicateur" value="Importation de viandes et préparations (téc)">
+                        <i class="fas fa-box-open"></i>
+                        <span>Importation (Tèc)</span>
+                    </label>
 
-    <!-- PAGE 1 : HEATMAP -->
-    <div id="page-heatmap" class="page-section active">
-        <div id="chart-container"></div>
-    </div>
+                    <label class="indicator-card">
+                        <input type="radio" name="indicateur" value="Importation de viandes et préparations (€)">
+                        <i class="fas fa-hand-holding-usd"></i>
+                        <span>Importation (€)</span>
+                    </label>
 
-    <!-- PAGE 2 : CARTE MONDE -->
-    <div id="page-map" class="page-section" style="display: none;">
-        <div id="map-container"></div>
-        <div id="map-tooltip" class="tooltip" style="opacity:0;"></div>
+                    <label class="indicator-card">
+                        <input type="radio" name="indicateur" value="Solde des échanges de viandes et préparations (téc)">
+                        <i class="fas fa-balance-scale"></i>
+                        <span>Solde (Tèc)</span>
+                    </label>
+
+                    <label class="indicator-card">
+                        <input type="radio" name="indicateur" value="Solde des échanges de viandes et préparations (€)">
+                        <i class="fas fa-coins"></i>
+                        <span>Solde (€)</span>
+                    </label>
+                </div>
+            </div>
+
+                <div class="control-section">
+                    <label class="section-title">Filtres d'exclusion</label>
+                    
+                    <!-- Switch Monde -->
+                    <div class="toggle-wrapper">
+                        <span class="toggle-label">Exclure 'Monde'</span>
+                        <label class="switch">
+                            <input type="checkbox" id="exclude-world" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+
+                    <!-- Switch Total Viandes -->
+                    <div class="toggle-wrapper">
+                        <span class="toggle-label">Exclure 'Total Viandes'</span>
+                        <label class="switch">
+                            <input type="checkbox" id="exclude-total-meat" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+
+                    <!-- Switch Total Annuel -->
+                    <div class="toggle-wrapper">
+                        <span class="toggle-label">Exclure 'Total Annuel'</span>
+                        <label class="switch">
+                            <input type="checkbox" id="exclude-total-year" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+
+                    <p class="helper-text">Décochez pour inclure les totaux dans le calcul.</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 3. PANNEAU DROITE : Classement -->
+        <aside class="right-panel glass-panel">
+            <div class="panel-header">
+                <h3>🏆 Classement</h3>
+                <small>Top 20 Pays</small>
+            </div>
+            <div id="ranking-list" class="ranking-container">
+                <!-- Rempli par JS -->
+            </div>
+        </aside>
+
+        <!-- Tooltip Carte -->
+        <div id="map-tooltip"></div>
+
     </div>
 
     <script src="js/main.js" type="module"></script>
