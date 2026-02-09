@@ -18,14 +18,12 @@
         <!-- 2. PANNEAU GAUCHE : Indicateurs & Filtres -->
         <aside class="left-panel glass-panel">
             <div class="panel-header">
-                <h2>🥩 Viandes</h2>
+                <h2>🥩 Echanges des Viandes avec la France </h2>
             </div>
 
-            <!-- Sélection d'Indicateur (Style "Cartes") -->
             <div class="control-section">
                 <label class="section-title">Choisir l'indicateur</label>
                 <div class="indicator-grid" id="indicator-container">
-                    <!-- Généré en JS ou en dur ici, je le mets en dur pour la clarté -->
                     
                     <label class="indicator-card active">
                         <input type="radio" name="indicateur" value="Exportations de viandes et préparations (téc)" checked>
@@ -77,25 +75,8 @@
                         </label>
                     </div>
 
-                    <!-- Switch Total Viandes -->
-                    <div class="toggle-wrapper">
-                        <span class="toggle-label">Exclure 'Total Viandes'</span>
-                        <label class="switch">
-                            <input type="checkbox" id="exclude-total-meat" checked>
-                            <span class="slider round"></span>
-                        </label>
-                    </div>
 
-                    <!-- Switch Total Annuel -->
-                    <div class="toggle-wrapper">
-                        <span class="toggle-label">Exclure 'Total Annuel'</span>
-                        <label class="switch">
-                            <input type="checkbox" id="exclude-total-year" checked>
-                            <span class="slider round"></span>
-                        </label>
-                    </div>
-
-                    <p class="helper-text">Décochez pour inclure les totaux dans le calcul.</p>
+                    <p class="helper-text">Coche décoche vas y !</p>
                 </div>
             </div>
         </aside>
@@ -111,8 +92,21 @@
             </div>
         </aside>
 
+        <!-- Mon filtre avec le temps... -->
+        <div class="timeline-container">
+            <div class="timeline-card">
+                <button id="btn-all-years" class="all-years-toggle active">Toutes les années</button>
+                <div class="slider-wrapper">
+                    <span id="year-display" class="year-tooltip">2025</span>
+                    <input type="range" id="year-slider" step="1">
+                </div>
+            </div>
+        </div>
+
         <!-- Tooltip Carte -->
-        <div id="map-tooltip"></div>
+        <div id="map-tooltip">
+            <p> y a rien </p>
+        </div>
 
     </div>
 

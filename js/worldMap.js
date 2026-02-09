@@ -1,139 +1,150 @@
 // js/worldMap.js
 
+// --- VARIABLES GLOBALES (Pour garder la mémoire entre deux mises à jour) ---
+let svg, g, path, projection;
+let countriesSelection; // Pour stocker les chemins des pays
+let isMapLoaded = false; // Pour savoir si la carte est prête
+
+// --- FONCTION PRINCIPALE ---
 export function drawWorldMap(data, indicateur, containerId) {
     const container = d3.select(containerId);
-    
-    // Récupération des dimensions de la fenêtre
     const width = window.innerWidth;
     const height = window.innerHeight;
 
-    // Nettoyage
-    container.selectAll("*").remove();
+    // ÉTAPE 1 : INITIALISATION (Seulement si la carte n'existe pas encore)
+    if (!isMapLoaded) {
+        console.log("--- Initialisation de la carte (Première fois) ---");
+        
+        // 1. Création du SVG
+        container.selectAll("*").remove(); // On nettoie juste la première fois
+        svg = container.append("svg")
+            .attr("width", width)
+            .attr("height", height)
+            .style("background", "#aadaff"); // Océan
 
-    console.log("--- Initialisation de la carte ---");
-    console.log(`Dimensions: ${width}x${height}`);
+        g = svg.append("g");
 
-    // 1. Préparation des données (Agrégation)
+        // 2. Projection
+        projection = d3.geoNaturalEarth1()
+            .scale(width / 6)
+            .translate([width / 2, height / 2]);
+
+        path = d3.geoPath().projection(projection);
+
+        // 3. Gestion du Zoom
+        const zoom = d3.zoom()
+            .scaleExtent([1, 20])
+            .on("zoom", (event) => {
+                g.attr("transform", event.transform);
+                g.selectAll("path").attr("stroke-width", 0.5 / event.transform.k);
+            });
+        svg.call(zoom);
+
+        // 4. Chargement du GeoJSON (Une seule fois !)
+        d3.json("data/world.geojson").then(geojson => {
+            console.log("GeoJSON chargé.");
+
+            // Dessin des pays (en gris au début)
+            countriesSelection = g.selectAll("path")
+                .data(geojson.features)
+                .enter()
+                .append("path")
+                .attr("class", "country") // Classe pour le CSS
+                .attr("d", path)
+                .attr("fill", "#ececec") // Gris par défaut
+                .attr("stroke", "#999")
+                .attr("stroke-width", 0.5);
+
+            // Ajout des événements Souris (Tooltip)
+            initTooltips();
+
+            // Zoom Initial sur l'Europe
+            const europeCenter = projection([10, 50]); 
+            const initialScale = 3.5;
+            const x = -europeCenter[0] * initialScale + width / 2;
+            const y = -europeCenter[1] * initialScale + height / 2;
+            
+            svg.call(zoom.transform, d3.zoomIdentity.translate(x, y).scale(initialScale));
+
+            // Marqueur que la carte est prête
+            isMapLoaded = true;
+
+            // MAINTENANT on applique les couleurs
+            updateColors(data, indicateur);
+        }).catch(err => console.error("Erreur GeoJSON:", err));
+
+    } else {
+        // ÉTAPE 2 : MISE À JOUR (Si la carte existe déjà)
+        // On ne redessine pas tout, on change juste les couleurs !
+        updateColors(data, indicateur);
+    }
+}
+
+// --- FONCTION DE MISE À JOUR DES COULEURS (ANIMATION) ---
+function updateColors(data, indicateur) {
+    if (!countriesSelection) return; // Sécurité si le JSON n'est pas fini de charger
+
+    console.log("Mise à jour des couleurs pour :", indicateur);
+
+    // 1. Agrégation des données
     const dataByCountry = d3.rollup(
         data.filter(d => d[indicateur] != null),
         v => d3.sum(v, d => Math.abs(d[indicateur])),
         d => d.COMEXVIANDE_DIM2_LIB
     );
 
-    // 2. Création du SVG
-    const svg = container.append("svg")
-        .attr("width", width)
-        .attr("height", height)
-        .style("background", "#aadaff"); // Couleur Océan
-
-    // Groupe qui contiendra la carte (pour le zoom)
-    const g = svg.append("g");
-
-    // 3. Projection
-    // On centre la projection initialement au milieu de l'écran
-    const projection = d3.geoNaturalEarth1()
-        .scale(width / 6) 
-        .translate([width / 2, height / 2]);
-
-    const path = d3.geoPath().projection(projection);
-
-    // 4. Échelle de couleur
+    // 2. Calcul de l'échelle de couleur
     const values = Array.from(dataByCountry.values()).filter(v => v > 0);
-    const maxVal = d3.max(values) || 0;
+    const maxVal = d3.max(values) || 1; // Evite division par 0
     
-    // Échelle logarithmique/puissance pour mieux voir les écarts
-    const colorScale = d3.scaleSequential(d => d3.interpolateYlOrRd(Math.pow(d / maxVal, 0.4)));
+    const colorScale = d3.scaleSequential(d => d3.interpolateYlOrRd(Math.pow(d / maxVal, 0.5))); // 0.5 pour éclaircir un peu
 
-    // 5. Chargement du GeoJSON
-    d3.json("data/world.geojson").then(geojson => {
-        console.log("GeoJSON chargé avec succès.", geojson.features.length, "pays trouvés.");
+    // 3. Application des couleurs avec TRANSITION
+    countriesSelection
+        .transition() // <--- C'est ici que la magie opère
+        .duration(750) // Durée de l'animation en ms (0.75s)
+        .ease(d3.easeCubicOut) // Type de mouvement fluide
+        .attr("fill", function(d) {
+            // Mapping Nom GeoJSON -> Nom CSV
+            const mapping = getCountryMapping();
+            const countryNameGeo = d.properties.name;
+            const csvName = mapping[countryNameGeo] || countryNameGeo;
+            
+            const val = dataByCountry.get(csvName) || 0;
+            
+            // On stocke la valeur DANS l'élément DOM pour le tooltip
+            // (Comme ça le tooltip affiche la valeur de l'année en cours)
+            this._currentValue = val; 
+            
+            return val > 0 ? colorScale(val) : "#ececec"; // Gris si 0
+        });
+}
 
-        // --- DESSIN DES PAYS ---
-        const countries = g.selectAll("path")
-            .data(geojson.features)
-            .enter()
-            .append("path")
-            .attr("d", path)
-            .attr("fill", d => {
-                // Récupération du mapping
-                const mapping = getCountryMapping();
-                const countryNameGeo = d.properties.name;
-                const csvName = mapping[countryNameGeo] || countryNameGeo;
-                
-                const val = dataByCountry.get(csvName) || 0;
-                d.totalValue = val; // On stocke la valeur pour le tooltip
+// --- GESTION DES TOOLTIPS ---
+function initTooltips() {
+    const tooltip = d3.select("#map-tooltip");
 
-                // Si pas de valeur -> Gris clair, Sinon -> Couleur
-                return val > 0 ? colorScale(val) : "#f0f0f0";
-            })
-            .attr("stroke", "#999")
-            .attr("stroke-width", 0.5)
-            .style("cursor", "pointer");
-
-        // --- GESTION DU TOOLTIP ---
-        const tooltip = d3.select("#map-tooltip");
-
-        countries.on("mouseover", function(event, d) {
-            d3.select(this)
-                .attr("stroke", "#333")
-                .attr("stroke-width", 1.5)
-                .raise(); // Met le pays au dessus des autres
-
+    countriesSelection
+        .on("mouseover", function(event, d) {
+            // Récupérer la valeur stockée lors de l'updateColors
+            const val = this._currentValue || 0;
+            
             tooltip.style("opacity", 1)
-                   .html(`<strong>${d.properties.name}</strong><br>
-                          ${d3.format(",.0f")(d.totalValue)}`);
+                   .html(`
+                       <div style='font-weight:bold; margin-bottom:5px;'>${d.properties.name}</div>
+                       <div style='color:#e74c3c;'>${d3.format(",.0f")(val)}</div>
+                   `);
         })
         .on("mousemove", function(event) {
             tooltip.style("left", (event.pageX + 15) + "px")
                    .style("top", (event.pageY - 15) + "px");
         })
         .on("mouseout", function() {
-            d3.select(this)
-                .attr("stroke", "#999")
-                .attr("stroke-width", 0.5); // Remet l'épaisseur fine
             tooltip.style("opacity", 0);
         });
-
-        // --- CONFIGURATION DU ZOOM ---
-        const zoom = d3.zoom()
-            .scaleExtent([1, 20]) // Zoom min x1, max x20
-            .on("zoom", (event) => {
-                g.attr("transform", event.transform);
-                // Ajustement sémantique : les bordures restent fines même quand on zoome
-                g.selectAll("path").attr("stroke-width", 0.5 / event.transform.k);
-            });
-
-        svg.call(zoom);
-
-        // --- ZOOM AUTOMATIQUE SUR L'EUROPE ---
-        // Coordonnées approximatives de l'Europe centrale (Long: 10, Lat: 50)
-        // La projection convertit (Long, Lat) -> (Pixels X, Pixels Y)
-        const europeCenter = projection([10, 50]); 
-        
-        // Paramètres du zoom initial
-        const initialScale = 3.5; // Grossissement x3.5
-        
-        // Calcul pour centrer ce point précis à l'écran
-        const x = -europeCenter[0] * initialScale + width / 2;
-        const y = -europeCenter[1] * initialScale + height / 2;
-
-        // Application de la transformation
-        svg.call(zoom.transform, d3.zoomIdentity
-            .translate(x, y)
-            .scale(initialScale)
-        );
-
-    }).catch(err => {
-        console.error("Erreur chargement GeoJSON:", err);
-        container.append("div")
-            .style("color", "red")
-            .style("padding", "20px")
-            .style("background", "white")
-            .html("Impossible de charger la carte (data/world.geojson introuvable ?)");
-    });
 }
 
-// --- FONCTION DE MAPPING (INTEGRÉE) ---
+// --- MAPPING PAYS (INCHANGÉ) ---
 function getCountryMapping() {
     return {
         "Algeria": "__Algerie",
