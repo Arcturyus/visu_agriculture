@@ -24,9 +24,28 @@ export function drawWorldMap(data, indicateur, containerId) {
         svg = container.append("svg")
             .attr("width", width)
             .attr("height", height)
-            .style("background", "#aadaff"); // Océan
+            .attr("class", "ocean-bg");
 
         g = svg.append("g");
+
+        // --- DEFS : Patterns & effets ---
+        const defs = svg.append("defs");
+
+        // Pattern hachures diagonales pour les pays sans données
+        const hatch = defs.append("pattern")
+            .attr("id", "hatch-null")
+            .attr("patternUnits", "userSpaceOnUse")
+            .attr("width", 6)
+            .attr("height", 6)
+            .attr("patternTransform", "rotate(45)");
+        hatch.append("rect")
+            .attr("width", 6).attr("height", 6)
+            .attr("fill", "#e8e8e8");
+        hatch.append("line")
+            .attr("x1", 0).attr("y1", 0)
+            .attr("x2", 0).attr("y2", 6)
+            .attr("stroke", "#ccc")
+            .attr("stroke-width", 1.5);
 
         // 2. Projection
         projection = d3.geoNaturalEarth1()
@@ -129,7 +148,15 @@ function updateColors(data, indicateur) {
             // (Comme ça le tooltip affiche la valeur de l'année en cours)
             this._currentValue = val; 
             
-            return val > 0 ? colorScale(val) : "#ececec"; // Gris si 0
+            // France : couleur normale + classe spéciale pour glow pulsant
+            if (csvName === "France") {
+                d3.select(this).classed("country-france", true);
+                return val > 0 ? colorScale(val) : "#f0f0f0";
+            }
+            d3.select(this).classed("country-france", false);
+            
+            // Pays sans données (hors France) : hachures
+            return val > 0 ? colorScale(val) : "url(#hatch-null)";
         });
 }
 

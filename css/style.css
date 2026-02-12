@@ -215,7 +215,6 @@ input:checked + .slider:before { transform: translateX(18px); }
 .focused-icon {
     font-size: 1.3rem;
     color: var(--accent);
-    animation: pulse-icon 1.5s ease-in-out infinite;
 }
 
 @keyframes pulse-icon {
@@ -396,6 +395,19 @@ path.country:hover {
     to {
         stroke-dashoffset: 28;
     }
+}
+
+/* --- OCEAN : Bleus riches, pas d'animation --- */
+svg.ocean-bg {
+    background: linear-gradient(135deg,
+        #0b3d5e, #145f8a, #1a7ab5, #2e94cc,
+        #1a7ab5, #145f8a, #0b3d5e);
+}
+
+/* --- FRANCE : Halo blanc léger statique --- */
+path.country-france {
+    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.8))
+            drop-shadow(0 0 12px rgba(255, 255, 255, 0.4));
 }
 
 /*  */
