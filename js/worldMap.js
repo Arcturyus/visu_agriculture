@@ -5,6 +5,10 @@ let svg, g, path, projection;
 let countriesSelection; // Pour stocker les chemins des pays
 let isMapLoaded = false; // Pour savoir si la carte est prête
 
+// --- PAYS FOCUSED ---
+let focusedCountryName = null; // Nom CSV du pays focus
+let focusedOverlay = null;     // Groupe SVG pour l'overlay animé
+
 // --- FONCTION PRINCIPALE ---
 export function drawWorldMap(data, indicateur, containerId) {
     const container = d3.select(containerId);
@@ -36,7 +40,12 @@ export function drawWorldMap(data, indicateur, containerId) {
             .scaleExtent([1, 20])
             .on("zoom", (event) => {
                 g.attr("transform", event.transform);
-                g.selectAll("path").attr("stroke-width", 0.5 / event.transform.k);
+                g.selectAll("path.country").attr("stroke-width", 0.5 / event.transform.k);
+                // Adapter l'épaisseur du focus overlay au zoom
+                g.selectAll(".focus-solid").attr("stroke-width", 1.6 / event.transform.k);
+                g.selectAll(".focus-border").attr("stroke-width", 0.8 / event.transform.k);
+                g.selectAll(".focus-border-secondary").attr("stroke-width", 0.6 / event.transform.k);
+                g.selectAll(".focus-glow").attr("stroke-width", 4 / event.transform.k);
             });
         svg.call(zoom);
 
@@ -55,8 +64,12 @@ export function drawWorldMap(data, indicateur, containerId) {
                 .attr("stroke", "#999")
                 .attr("stroke-width", 0.5);
 
-            // Ajout des événements Souris (Tooltip)
+            // Ajout des événements Souris (Tooltip + Click focus)
             initTooltips();
+            initClickFocus();
+
+            // Groupe overlay pour le pays focused (par dessus les pays)
+            focusedOverlay = g.append("g").attr("class", "focused-overlay");
 
             // Zoom Initial sur l'Europe
             const europeCenter = projection([10, 50]); 
@@ -118,6 +131,96 @@ function updateColors(data, indicateur) {
             
             return val > 0 ? colorScale(val) : "#ececec"; // Gris si 0
         });
+}
+
+// --- GESTION DU CLICK FOCUS ---
+function initClickFocus() {
+    countriesSelection.on("click", function(event, d) {
+        const mapping = getCountryMapping();
+        const countryNameGeo = d.properties.name;
+        const csvName = mapping[countryNameGeo] || countryNameGeo;
+        const val = this._currentValue || 0;
+
+        // Toggle : si on re-clique sur le même pays, on défocus
+        if (focusedCountryName === csvName) {
+            clearFocus();
+            return;
+        }
+
+        focusedCountryName = csvName;
+
+        // Overlay animé
+        drawFocusedBorder(d);
+
+        // Mise à jour du panneau info
+        updateInfoPanel(countryNameGeo, csvName, val);
+    });
+}
+
+// Efface le focus
+export function clearFocus() {
+    focusedCountryName = null;
+    if (focusedOverlay) focusedOverlay.selectAll("*").remove();
+    d3.select("#info-country-focused").html("");
+}
+
+export function getFocusedCountry() {
+    return focusedCountryName;
+}
+
+// Dessine la bordure animée autour du pays
+function drawFocusedBorder(feature) {
+    if (!focusedOverlay) return;
+    focusedOverlay.selectAll("*").remove();
+
+    // Glow léger
+    focusedOverlay.append("path")
+        .datum(feature)
+        .attr("d", path)
+        .attr("class", "focus-glow");
+
+    // Bordure solide classique (focus principal visible)
+    focusedOverlay.append("path")
+        .datum(feature)
+        .attr("d", path)
+        .attr("class", "focus-solid");
+
+    // Filet animé très lent par dessus
+    focusedOverlay.append("path")
+        .datum(feature)
+        .attr("d", path)
+        .attr("class", "focus-border");
+
+    // Deuxième filet subtil
+    focusedOverlay.append("path")
+        .datum(feature)
+        .attr("d", path)
+        .attr("class", "focus-border-secondary");
+}
+
+// Met à jour le panneau info pays
+function updateInfoPanel(geoName, csvName, value) {
+    const cleanName = csvName.replace(/^_+/, "").replace(/_/g, " ");
+    const panel = d3.select("#info-country-focused");
+
+    panel.html(`
+        <div class="focused-country-card">
+            <div class="focused-country-header">
+                <i class="fas fa-map-marker-alt focused-icon"></i>
+                <span class="focused-country-name">${cleanName}</span>
+            </div>
+            <div class="focused-country-value">
+                <span class="focused-label">Valeur actuelle</span>
+                <span class="focused-number">${d3.format(",.0f")(value)}</span>
+            </div>
+            <button class="btn-clear-focus" onclick="document.dispatchEvent(new Event('clear-focus'))">
+                <i class="fas fa-times"></i> Retirer le focus
+            </button>
+        </div>
+    `);
+
+    // Listener pour le bouton
+    panel.select(".btn-clear-focus").on("click", () => clearFocus());
 }
 
 // --- GESTION DES TOOLTIPS ---

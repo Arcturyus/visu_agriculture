@@ -37,7 +37,7 @@ svg {
 .glass-panel {
     position: absolute;
     top: 20px;
-    bottom: 20px; /* Prend toute la hauteur avec marge */
+    bottom: 20px;
     width: 300px;
     background: var(--glass);
     backdrop-filter: blur(12px);
@@ -48,7 +48,7 @@ svg {
     display: flex;
     flex-direction: column;
     z-index: 100;
-    overflow-y: auto;
+    overflow: hidden; /* Le panneau lui-même ne scroll pas, c'est le contenu interne */
 }
 
 .panel-header {
@@ -57,10 +57,12 @@ svg {
     padding-bottom: 10px;
 }
 .panel-header h2, .panel-header h3 { margin: 0; color: var(--primary); }
-.panel-header p, .panel-header small { margin: 0; color: #666; font-size: 0.9rem; }
 
 /* --- PANNEAU GAUCHE --- */
-.left-panel { left: 20px; }
+.left-panel {
+    left: 20px;
+    overflow-y: auto;
+}
 
 .section-title {
     display: block;
@@ -129,7 +131,7 @@ svg {
     margin-bottom: 0;
 }
 
-.toggle-label { font-size: 0.9rem; }
+.toggle-label { font-size: 0.85rem; }
 
 .switch {
     position: relative;
@@ -164,30 +166,152 @@ input:checked + .slider:before { transform: translateX(18px); }
 
 
 /* --- PANNEAU DROITE (CLASSEMENT) --- */
-.right-panel { right: 20px; }
+.right-panel-top {
+    right: 20px;
+    width: 420px;
+    top: 20px;
+    bottom: auto;
+    max-height: 55vh;
+}
 
-.ranking-item {
+/* --- PANNEAU DROITE BAS (PAYS FOCUS) --- */
+.right-panel-bottom {
+    right: 20px;
+    width: 420px;
+    top: auto;
+    bottom: 80px;
+    height: 25vh;
+    max-height: 25vh;
+}
+
+/* Conteneur du graphique de ranking */
+.ranking-container {
+    position: relative;
+    overflow-y: auto;
+    overflow-x: hidden;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Panneau info pays en dessous */
+#info-country-focused {
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* Carte du pays focused */
+.focused-country-card {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-    font-size: 0.9rem;
+    flex-direction: column;
+    gap: 12px;
 }
-.ranking-item:last-child { border-bottom: none; }
 
-.rank-index {
-    font-weight: bold;
-    color: #999;
-    width: 25px;
+.focused-country-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
-.rank-name {
-    flex-grow: 1;
-    font-weight: 500;
+
+.focused-icon {
+    font-size: 1.3rem;
+    color: var(--accent);
+    animation: pulse-icon 1.5s ease-in-out infinite;
 }
-.rank-value {
-    font-weight: bold;
+
+@keyframes pulse-icon {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.7; }
+}
+
+.focused-country-name {
+    font-size: 1.15rem;
+    font-weight: 800;
     color: var(--primary);
+    letter-spacing: 0.3px;
+}
+
+.focused-country-value {
+    display: flex;
+    flex-direction: column;
+    background: #fff5f5;
+    border-radius: 10px;
+    padding: 10px 14px;
+    border-left: 3px solid var(--accent);
+}
+
+.focused-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #999;
+    font-weight: 600;
+}
+
+.focused-number {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.btn-clear-focus {
+    background: white;
+    border: 1px solid #ddd;
+    color: #888;
+    padding: 8px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    align-self: flex-start;
+}
+
+.btn-clear-focus:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(231, 76, 60, 0.3);
+}
+
+.btn-clear-focus i {
+    font-size: 0.7rem;
+}
+
+.ranking-container svg {
+    display: block;
+    width: 100%;
+}
+
+/* Axes du graphique */
+.rank-axis text {
+    font-size: 0.7rem;
+    fill: #666;
+}
+
+.rank-axis line,
+.rank-axis path {
+    stroke: #ccc;
+}
+
+/* Tooltip sur les points */
+.rank-tooltip {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 6px 10px;
+    border-radius: 6px;
+    pointer-events: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    font-size: 0.75rem;
+    color: #333;
+    border: 1px solid #eee;
+    transition: opacity 0.15s;
+    z-index: 10;
+    white-space: nowrap;
 }
 
 /* Tooltip Map */
@@ -208,15 +332,70 @@ input:checked + .slider:before { transform: translateX(18px); }
 
 /* La carte elle-même */
 path.country {
-    transition: stroke 0.3s ease; /* Pour que la bordure noire apparaisse doucement */
+    transition: stroke 0.3s ease, opacity 0.4s ease;
     cursor: pointer;
 }
 
 /* Effet quand on passe la souris dessus */
 path.country:hover {
-    stroke: #333 !important; /* Force la bordure noire */
+    stroke: #333 !important;
     stroke-width: 1px !important;
     opacity: 1;
+}
+
+
+
+/* --- OVERLAY FOCUS ANIMÉ --- */
+
+/* Bordure solide classique (focus principal) */
+.focus-solid {
+    fill: none;
+    stroke: rgba(0, 0, 0, 0.7);
+    stroke-width: 1.1px;
+    pointer-events: none;
+}
+
+/* Glow très léger */
+.focus-glow {
+    fill: none;
+    stroke: rgba(44, 62, 80, 0.08);
+    stroke-width: 5px;
+    pointer-events: none;
+    filter: blur(3px);
+}
+
+/* Filet animé très lent et fin */
+.focus-border {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.6);
+    stroke-width: 0.7px;
+    stroke-dasharray: 4, 8;
+    stroke-linecap: round;
+    pointer-events: none;
+    animation: dash-flow 12s linear infinite;
+}
+
+/* Deuxième filet ultra-subtil */
+.focus-border-secondary {
+    fill: none;
+    stroke: rgba(44, 62, 80, 0.2);
+    stroke-width: 0.5px;
+    stroke-dasharray: 2, 12;
+    stroke-linecap: round;
+    pointer-events: none;
+    animation: dash-flow-reverse 15s linear infinite;
+}
+
+@keyframes dash-flow {
+    to {
+        stroke-dashoffset: -28;
+    }
+}
+
+@keyframes dash-flow-reverse {
+    to {
+        stroke-dashoffset: 28;
+    }
 }
 
 /*  */
@@ -326,4 +505,52 @@ path.country:hover {
     border-color: var(--accent);
     color: white;
     box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);
+}
+
+/* Bouton Play/Pause */
+#play_btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);
+    position: relative;
+    flex-shrink: 0;
+}
+
+#play_btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 15px rgba(231, 76, 60, 0.5);
+}
+
+#play_btn:active {
+    transform: scale(0.95);
+}
+
+/* Icône Play (triangle) */
+#play_btn::before {
+    content: '';
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 8px 0 8px 14px;
+    border-color: transparent transparent transparent white;
+    margin-left: 3px; /* Centrage optique */
+    transition: all 0.3s;
+}
+
+/* Icône Pause (deux barres) - Quand le bouton a la classe 'playing' */
+#play_btn.playing::before {
+    border: none;
+    width: 12px;
+    height: 16px;
+    margin-left: 0;
+    background: 
+        linear-gradient(to right, white 0%, white 35%, transparent 35%, transparent 65%, white 65%, white 100%);
 }

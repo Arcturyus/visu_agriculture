@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ViandesViz - Dashboard</title>
+    <title>Echanges de viandes avec la France</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
@@ -68,7 +68,7 @@
                     
                     <!-- Switch Monde -->
                     <div class="toggle-wrapper">
-                        <span class="toggle-label">Exclure 'Monde'</span>
+                        <span class="toggle-label">Exclure 'Monde', 'UE' et 'PAYS TIERS'</span>
                         <label class="switch">
                             <input type="checkbox" id="exclude-world" checked>
                             <span class="slider round"></span>
@@ -81,20 +81,31 @@
             </div>
         </aside>
 
-        <!-- 3. PANNEAU DROITE : Classement -->
-        <aside class="right-panel glass-panel">
-            <div class="panel-header">
-                <h3>🏆 Classement</h3>
-                <small>Top 20 Pays</small>
-            </div>
-            <div id="ranking-list" class="ranking-container">
-                <!-- Rempli par JS -->
-            </div>
-        </aside>
+        <!-- 3. COLONNE DROITE : Classement + Pays Focus -->
+        <div class="right-column">
+            <aside class="glass-panel right-panel-top">
+                <div class="panel-header">
+                    <h3>📈 Évolution du Classement</h3>
+                </div>
+                <div id="ranking-list" class="ranking-container">
+                    <!-- Rempli par JS -->
+                </div>
+            </aside>
+
+            <aside class="glass-panel right-panel-bottom">
+                <div class="panel-header">
+                    <h3>🎯 Pays Sélectionné</h3>
+                </div>
+                <div id="info-country-focused">
+                    <p class="helper-text" style="text-align:center; margin-top:10px;">Clique sur un pays de la carte</p>
+                </div>
+            </aside>
+        </div>
 
         <!-- Mon filtre avec le temps... -->
         <div class="timeline-container">
             <div class="timeline-card">
+                <button id="play_btn">  </button>
                 <button id="btn-all-years" class="all-years-toggle active">Toutes les années</button>
                 <div class="slider-wrapper">
                     <span id="year-display" class="year-tooltip">2025</span>

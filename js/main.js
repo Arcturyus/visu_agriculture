@@ -1,4 +1,4 @@
-import { drawWorldMap } from './worldMap.js';
+import { drawWorldMap, clearFocus, getFocusedCountry } from './worldMap.js';
 import { updateRanking } from './ranking.js';
 
 let globalData = [];
@@ -16,6 +16,8 @@ const indicateurs = [
 
 let currentYear = null;
 let isAllYears = true;
+let isPlaying = false;
+let playInterval = null;
 
 d3.csv("data/comexviande_pivot.csv", d => {
     // 1. On récupère les valeurs brutes ou une chaîne vide si inexistant
@@ -88,6 +90,9 @@ function initListeners() {
 
     // pour l'année...
     d3.select("#year-slider").on("input", function() {
+        // Si on change manuellement le slider, on arrête l'animation
+        stopAnimation();
+        
         isAllYears = false; 
         d3.select("#btn-all-years").classed("active", false);
         currentYear = +this.value;
@@ -97,14 +102,80 @@ function initListeners() {
 
     // Bouton Toutes les années
     d3.select("#btn-all-years").on("click", function() {
+        // Si on clique sur "Toutes les années", on arrête l'animation
+        stopAnimation();
+        
         isAllYears = !isAllYears;
         d3.select(this).classed("active", isAllYears);
         updateYearUI();
         updateApp();
     });
+    
+    // Bouton Play/Pause
+    d3.select("#play_btn").on("click", function() {
+        if (isPlaying) {
+            stopAnimation();
+        } else {
+            startAnimation();
+        }
+    });
 
     // Écouteur sur le switch "Monde"
     d3.select("#exclude-world").on("change", updateApp);
+}
+
+function startAnimation() {
+    // Récupère les années min et max
+    const sliderNode = document.getElementById('year-slider');
+    const minYear = +sliderNode.min;
+    const maxYear = +sliderNode.max;
+    
+    // Si on est en mode "Toutes les années", on commence par la première année
+    if (isAllYears) {
+        currentYear = minYear;
+        isAllYears = false;
+        d3.select("#btn-all-years").classed("active", false);
+    }
+    
+    // Si on est déjà à la fin, on recommence au début
+    if (currentYear >= maxYear) {
+        currentYear = minYear;
+    }
+    
+    // Marque comme en cours de lecture
+    isPlaying = true;
+    d3.select("#play_btn").classed("playing", true);
+    
+    // Fonction de mise à jour d'une année
+    const nextYear = () => {
+        currentYear++;
+        
+        // Met à jour le slider
+        d3.select("#year-slider").property("value", currentYear);
+        
+        updateYearUI();
+        updateApp();
+        
+        // Si on atteint la dernière année, on arrête
+        if (currentYear >= maxYear) {
+            stopAnimation();
+        }
+    };
+    
+    // Premier changement immédiat
+    nextYear();
+    
+    // Puis continue avec un intervalle
+    playInterval = setInterval(nextYear, 400); // Vitesse : 400ms par année
+}
+
+function stopAnimation() {
+    if (playInterval) {
+        clearInterval(playInterval);
+        playInterval = null;
+    }
+    isPlaying = false;
+    d3.select("#play_btn").classed("playing", false);
 }
 
 function updateYearUI() {
@@ -131,6 +202,7 @@ function updateApp() {
     const excludeWorld = d3.select("#exclude-world").property("checked");
 
     console.log(`Filtrage : Année=${isAllYears ? 'Toutes' : currentYear}, Indicateur=${indicateur}`);
+    console.log("d.COMEXVIANDE_DIM2_LIBunique :", [...new Set(globalData.map(d => d.COMEXVIANDE_DIM2_LIB))].slice(0, 10)); // Affiche les 10 premiers pays uniques
 
     let filteredData = globalData.filter(d => {
         // 1. Filtre Année : on utilise ANNREF
@@ -139,7 +211,7 @@ function updateApp() {
         // 2. Filtre Monde
         let matchWorld = true;
         if (excludeWorld) {
-            matchWorld = d.COMEXVIANDE_DIM2_LIB !== "Monde" && d.COMEXVIANDE_DIM2_LIB !== "__Monde";
+            matchWorld = d.COMEXVIANDE_DIM2_LIB !== "Monde" && d.COMEXVIANDE_DIM2_LIB !== "_UE" && d.COMEXVIANDE_DIM2_LIB !== "_PAYS TIERS";
         }
 
         return matchYear && matchWorld;
@@ -148,9 +220,17 @@ function updateApp() {
     // Debug pour voir si des données sortent après filtre
     console.log("Nombre de lignes après filtre :", filteredData.length);
 
-    // On envoie à la carte et au ranking
+    // Données pour le ranking : toutes les années mais avec filtre monde
+    let rankingData = globalData.filter(d => {
+        let matchWorld = true;
+        if (excludeWorld) {
+            matchWorld = d.COMEXVIANDE_DIM2_LIB !== "Monde" && d.COMEXVIANDE_DIM2_LIB !== "_UE" && d.COMEXVIANDE_DIM2_LIB !== "_PAYS TIERS";
+        }
+        return matchWorld;
+    });
+
     // Rappel : drawWorldMap fait déjà la somme (d3.sum) des valeurs trouvées
-    // Donc si on a 12 mois pour 1 pays, il va bien les additionner.
+    // Donc si on a 12 mois pour 1 pays, il va bien les additionner !!!!!!!!!!
     drawWorldMap(filteredData, indicateur, "#map-background");
-    updateRanking(filteredData, indicateur);
+    updateRanking(rankingData, indicateur, currentYear, isAllYears);
 }
