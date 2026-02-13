@@ -3,9 +3,9 @@
 const cleanName = (name) => name.replace(/^_+/, "").replace(/_/g, " ");
 
 const RANK_COLORS = [
-    "#e74c3c", "#3498db", "#2ecc71", "#f39c12", "#d3b5df",
-    "#8e44ad", "#e67e22", "#34495e", "#c0392b", "#16a085",
-    "#27ae60", "#2980b9", "#8b4513", "#d35400", "#7f8c8d"
+    "#e74c3c", "#3498db", "#29dc2c", "#f39c12", "#d3b5df",
+    "#8e44ad", "#e67e22", "#343f4b", "#c0392b", "#16a097",
+    "#178f3d", "#053e64", "#8b4513", "#d35400", "#7f8c8d"
 ];
 
 const TOP_N = 5; // On affiche les rangs 1 à 5
@@ -29,7 +29,7 @@ export function updateRanking(allData, indicateur, currentYear, isAllYears) {
         const yearData = allData.filter(d => d.ANNREF === year && d[indicateur] != null);
         const byCountry = d3.rollup(
             yearData,
-            v => d3.sum(v, d => Math.abs(d[indicateur])),
+            v => d3.sum(v, d => d[indicateur]),
             d => d.COMEXVIANDE_DIM2_LIB
         );
 
@@ -51,7 +51,7 @@ export function updateRanking(allData, indicateur, currentYear, isAllYears) {
     // Trier par total cumulé (juste pour l'ordre d'attribution des couleurs)
     const totalByCountry = d3.rollup(
         allData.filter(d => d[indicateur] != null),
-        v => d3.sum(v, d => Math.abs(d[indicateur])),
+        v => d3.sum(v, d => d[indicateur]),
         d => d.COMEXVIANDE_DIM2_LIB
     );
 

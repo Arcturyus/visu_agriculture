@@ -10,7 +10,7 @@ let focusedCountryName = null; // Nom CSV du pays focus
 let focusedOverlay = null;     // Groupe SVG pour l'overlay animé
 
 // --- FONCTION PRINCIPALE ---
-export function drawWorldMap(data, indicateur, containerId) {
+export function drawWorldMap(data, indicateur, containerId, allData, scaleData) {
     const container = d3.select(containerId);
     const width = window.innerWidth;
     const height = window.innerHeight;
@@ -102,62 +102,161 @@ export function drawWorldMap(data, indicateur, containerId) {
             isMapLoaded = true;
 
             // MAINTENANT on applique les couleurs
-            updateColors(data, indicateur);
+            updateColors(data, indicateur, allData, scaleData);
         }).catch(err => console.error("Erreur GeoJSON:", err));
 
     } else {
         // ÉTAPE 2 : MISE À JOUR (Si la carte existe déjà)
         // On ne redessine pas tout, on change juste les couleurs !
-        updateColors(data, indicateur);
+        updateColors(data, indicateur, allData, scaleData);
     }
 }
 
 // --- FONCTION DE MISE À JOUR DES COULEURS (ANIMATION) ---
-function updateColors(data, indicateur) {
-    if (!countriesSelection) return; // Sécurité si le JSON n'est pas fini de charger
+function updateColors(data, indicateur, allData, scaleData) {
+    if (!countriesSelection) return;
 
     console.log("Mise à jour des couleurs pour :", indicateur);
 
-    // 1. Agrégation des données
+    // 1. Agrégation des données filtrées (pour l'affichage)
     const dataByCountry = d3.rollup(
         data.filter(d => d[indicateur] != null),
-        v => d3.sum(v, d => Math.abs(d[indicateur])),
+        v => d3.sum(v, d => d[indicateur]),
         d => d.COMEXVIANDE_DIM2_LIB
     );
 
-    // 2. Calcul de l'échelle de couleur
-    const values = Array.from(dataByCountry.values()).filter(v => v > 0);
-    const maxVal = d3.max(values) || 1; // Evite division par 0
-    
-    const colorScale = d3.scaleSequential(d => d3.interpolateYlOrRd(Math.pow(d / maxVal, 0.5))); // 0.5 pour éclaircir un peu
+    // 1b. Set des pays ayant AU MOINS une donnée sur toutes les années
+    const countriesWithAnyData = new Set();
+    if (allData) {
+        allData.forEach(d => {
+            if (d[indicateur] != null && d[indicateur] !== 0) {
+                countriesWithAnyData.add(d.COMEXVIANDE_DIM2_LIB);
+            }
+        });
+    }
+
+    // 2. Échelle FIXE basée sur scaleData (filtrée par année, SANS exclusion géo)
+    //    → l'échelle ne change pas quand on toggle "Exclure Monde/UE/Pays tiers"
+    const scaleByCountry = d3.rollup(
+        scaleData.filter(d => d[indicateur] != null),
+        v => d3.sum(v, d => d[indicateur]),
+        d => d.COMEXVIANDE_DIM2_LIB
+    );
+    const scaleValues = Array.from(scaleByCountry.values());
+    const globalMin = d3.min(scaleValues) || 0;
+    const globalMax = d3.max(scaleValues) || 1;
+
+    const isSolde = indicateur.includes("Solde");
+    let colorScale;
+
+    if (isSolde) {
+        // Diverging : rouge = déficit, jaune = neutre, vert = excédent
+        const absMax = Math.max(Math.abs(globalMin), Math.abs(globalMax));
+        colorScale = d3.scaleDiverging(d3.interpolateRdYlGn)
+            .domain([-absMax, 0, absMax]);
+    } else {
+        // Séquentiel : 0 → max, avec racine carrée pour mieux voir les faibles valeurs
+        colorScale = d3.scaleSequentialSqrt(d3.interpolateYlOrRd)
+            .domain([0, globalMax]);
+    }
 
     // 3. Application des couleurs avec TRANSITION
     countriesSelection
-        .transition() // <--- C'est ici que la magie opère
-        .duration(750) // Durée de l'animation en ms (0.75s)
-        .ease(d3.easeCubicOut) // Type de mouvement fluide
+        .transition()
+        .duration(750)
+        .ease(d3.easeCubicOut)
         .attr("fill", function(d) {
-            // Mapping Nom GeoJSON -> Nom CSV
             const mapping = getCountryMapping();
             const countryNameGeo = d.properties.name;
             const csvName = mapping[countryNameGeo] || countryNameGeo;
-            
-            const val = dataByCountry.get(csvName) || 0;
-            
-            // On stocke la valeur DANS l'élément DOM pour le tooltip
-            // (Comme ça le tooltip affiche la valeur de l'année en cours)
-            this._currentValue = val; 
-            
-            // France : couleur normale + classe spéciale pour glow pulsant
+
+            const val = dataByCountry.get(csvName);
+            const numVal = val !== undefined ? val : 0;
+
+            this._currentValue = numVal;
+
+            // France : couleur + glow spécial
             if (csvName === "France") {
                 d3.select(this).classed("country-france", true);
-                return val > 0 ? colorScale(val) : "#f0f0f0";
+                return val !== undefined ? colorScale(numVal) : "#ffffff";
             }
             d3.select(this).classed("country-france", false);
-            
-            // Pays sans données (hors France) : hachures
-            return val > 0 ? colorScale(val) : "url(#hatch-null)";
+
+            // Pays sans aucune donnée toutes années confondues → hachures
+            if (!countriesWithAnyData.has(csvName)) {
+                return "url(#hatch-null)";
+            }
+
+            // Pas dans la sélection courante → gris
+            if (val === undefined) return "#ececec";
+            // Pour les indicateurs non-solde, 0 = gris
+            if (!isSolde && numVal === 0) return "#ececec";
+
+            return colorScale(numVal);
         });
+
+    // 4. Légende discrète
+    drawLegend(colorScale, isSolde, globalMin, globalMax);
+}
+
+// --- LÉGENDE DISCRÈTE ---
+function formatLegendValue(val) {
+    const abs = Math.abs(val);
+    if (abs >= 1e9) return (val / 1e9).toFixed(1) + " Md";
+    if (abs >= 1e6) return (val / 1e6).toFixed(1) + " M";
+    if (abs >= 1e3) return Math.round(val / 1e3) + " K";
+    return Math.round(val).toString();
+}
+
+function drawLegend(colorScale, isSolde, globalMin, globalMax) {
+    const container = d3.select("#map-legend");
+    container.html("");
+
+    const numSteps = isSolde ? 9 : 7;
+    let steps;
+
+    if (isSolde) {
+        const absMax = Math.max(Math.abs(globalMin), Math.abs(globalMax));
+        steps = d3.range(numSteps).map(i => {
+            const val = -absMax + (2 * absMax * i) / (numSteps - 1);
+            return { value: val, color: colorScale(val) };
+        });
+    } else {
+        steps = d3.range(numSteps).map(i => {
+            const val = (globalMax * i) / (numSteps - 1);
+            return { value: val, color: colorScale(val) };
+        });
+    }
+
+    // Titre
+    container.append("div")
+        .attr("class", "legend-title")
+        .text(isSolde ? "Déficit  ←  0  →  Excédent" : "Valeur");
+
+    // Ligne horizontale : min | barre | max
+    const row = container.append("div").attr("class", "legend-row");
+    row.append("span").attr("class", "legend-val legend-val-min").text(formatLegendValue(steps[0].value));
+
+    const bar = row.append("div").attr("class", "legend-bar");
+    steps.forEach(step => {
+        bar.append("div")
+            .attr("class", "legend-cell")
+            .style("background-color", step.color);
+    });
+
+    row.append("span").attr("class", "legend-val legend-val-max").text(formatLegendValue(steps[steps.length - 1].value));
+
+    // "0" au centre pour le solde
+    if (isSolde) {
+        bar.append("span").attr("class", "legend-zero").text("0");
+    }
+
+    // Éléments supplémentaires
+    const extras = container.append("div").attr("class", "legend-extras");
+    extras.append("div").attr("class", "legend-extra-item")
+        .html('<div class="legend-swatch legend-hatch"></div><span>Pas de données</span>');
+    extras.append("div").attr("class", "legend-extra-item")
+        .html('<div class="legend-swatch" style="background:#ececec"></div><span>Aucune valeur</span>');
 }
 
 // --- GESTION DU CLICK FOCUS ---

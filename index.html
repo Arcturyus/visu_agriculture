@@ -22,61 +22,76 @@
             </div>
 
             <div class="control-section">
-                <label class="section-title">Choisir l'indicateur</label>
+                <label class="section-title">Indicateur</label>
                 <div class="indicator-grid" id="indicator-container">
-                    
-                    <label class="indicator-card active">
-                        <input type="radio" name="indicateur" value="Exportations de viandes et préparations (téc)" checked>
-                        <i class="fas fa-ship"></i>
-                        <span>Exportation (Tèc)</span>
-                    </label>
-
-                    <label class="indicator-card">
-                        <input type="radio" name="indicateur" value="Exportations de viandes et préparations (€)">
-                        <i class="fas fa-euro-sign"></i>
-                        <span>Exportation (€)</span>
-                    </label>
-
-                    <label class="indicator-card">
-                        <input type="radio" name="indicateur" value="Importation de viandes et préparations (téc)">
-                        <i class="fas fa-box-open"></i>
-                        <span>Importation (Tèc)</span>
-                    </label>
-
-                    <label class="indicator-card">
-                        <input type="radio" name="indicateur" value="Importation de viandes et préparations (€)">
-                        <i class="fas fa-hand-holding-usd"></i>
-                        <span>Importation (€)</span>
-                    </label>
-
-                    <label class="indicator-card">
-                        <input type="radio" name="indicateur" value="Solde des échanges de viandes et préparations (téc)">
-                        <i class="fas fa-balance-scale"></i>
-                        <span>Solde (Tèc)</span>
-                    </label>
-
-                    <label class="indicator-card">
-                        <input type="radio" name="indicateur" value="Solde des échanges de viandes et préparations (€)">
-                        <i class="fas fa-coins"></i>
-                        <span>Solde (€)</span>
-                    </label>
+                    <div class="indicator-row">
+                        <label class="indicator-card active">
+                            <input type="radio" name="indicateur" value="Exportations de viandes et préparations (téc)" checked>
+                            <i class="fas fa-ship"></i>
+                            <span>Export (Tèc)</span>
+                        </label>
+                        <label class="indicator-card">
+                            <input type="radio" name="indicateur" value="Exportations de viandes et préparations (€)">
+                            <i class="fas fa-euro-sign"></i>
+                            <span>Export (€)</span>
+                        </label>
+                    </div>
+                    <div class="indicator-row">
+                        <label class="indicator-card">
+                            <input type="radio" name="indicateur" value="Importation de viandes et préparations (téc)">
+                            <i class="fas fa-box-open"></i>
+                            <span>Import (Tèc)</span>
+                        </label>
+                        <label class="indicator-card">
+                            <input type="radio" name="indicateur" value="Importation de viandes et préparations (€)">
+                            <i class="fas fa-hand-holding-usd"></i>
+                            <span>Import (€)</span>
+                        </label>
+                    </div>
+                    <div class="indicator-row">
+                        <label class="indicator-card">
+                            <input type="radio" name="indicateur" value="Solde des échanges de viandes et préparations (téc)">
+                            <i class="fas fa-balance-scale"></i>
+                            <span>Solde (Tèc)</span>
+                        </label>
+                        <label class="indicator-card">
+                            <input type="radio" name="indicateur" value="Solde des échanges de viandes et préparations (€)">
+                            <i class="fas fa-coins"></i>
+                            <span>Solde (€)</span>
+                        </label>
+                    </div>
                 </div>
             </div>
 
-                <div class="control-section">
-                    <label class="section-title">Filtres d'exclusion</label>
-                    
-                    <!-- Switch Monde -->
-                    <div class="toggle-wrapper">
-                        <span class="toggle-label">Exclure 'Monde', 'UE' et 'PAYS TIERS'</span>
-                        <label class="switch">
-                            <input type="checkbox" id="exclude-world" checked>
-                            <span class="slider round"></span>
-                        </label>
-                    </div>
+            <div class="control-section">
+                <label class="section-title">Type de viande</label>
+                <div class="meat-grid" id="meat-container">
+                    <label class="meat-chip active"><input type="radio" name="viande" value="all" checked><span class="meat-icon">🍖</span><span class="meat-label">Toutes</span></label>
+                    <label class="meat-chip"><input type="radio" name="viande" value="Viande bovine avec onglet et hampe"><span class="meat-icon">🐂</span><span class="meat-label">Bovine</span></label>
+                    <label class="meat-chip"><input type="radio" name="viande" value="Viande porcine"><span class="meat-icon">🐷</span><span class="meat-label">Porcine</span></label>
+                    <label class="meat-chip"><input type="radio" name="viande" value="Viande ovine"><span class="meat-icon">🐑</span><span class="meat-label">Ovine</span></label>
+                    <label class="meat-chip"><input type="radio" name="viande" value="Viande caprine"><span class="meat-icon">🐐</span><span class="meat-label">Caprine</span></label>
+                    <label class="meat-chip"><input type="radio" name="viande" value="Viande d'animaux de boucherie"><span class="meat-icon">🪩</span><span class="meat-label">Boucherie</span></label>
+                    <label class="meat-chip"><input type="radio" name="viande" value="Viande de volailles de chair (n.c. petites espèces)"><span class="meat-icon">🐔</span><span class="meat-label">Volailles</span></label>
+                    <label class="meat-chip"><input type="radio" name="viande" value="viande de gallus"><span class="meat-icon">🐓</span><span class="meat-label">Gallus</span></label>
+                    <label class="meat-chip"><input type="radio" name="viande" value="viande de dinde"><span class="meat-icon">🦃</span><span class="meat-label">Dinde</span></label>
+                    <label class="meat-chip"><input type="radio" name="viande" value="viande de canard"><span class="meat-icon">🦆</span><span class="meat-label">Canard</span></label>
+                    <label class="meat-chip"><input type="radio" name="viande" value="Viande d'oie"><span class="meat-icon">🪶</span><span class="meat-label">Oie</span></label>
+                    <label class="meat-chip"><input type="radio" name="viande" value="Viande de pintade"><span class="meat-icon">🐦</span><span class="meat-label">Pintade</span></label>
+                    <label class="meat-chip"><input type="radio" name="viande" value="Viande d'équidés"><span class="meat-icon">🐎</span><span class="meat-label">Équidés</span></label>
+                    <label class="meat-chip"><input type="radio" name="viande" value="Graisse de porc"><span class="meat-icon">🧈</span><span class="meat-label">Graisse</span></label>
+                    <label class="meat-chip"><input type="radio" name="viande" value="Viande porcine  y compris graisse de porc"><span class="meat-icon">🐷</span><span class="meat-label">Porc+gr.</span></label>
+                </div>
+            </div>
 
-
-                    <p class="helper-text">Coche décoche vas y !</p>
+            <div class="control-section">
+                <label class="section-title">Filtres</label>
+                <div class="toggle-wrapper">
+                    <span class="toggle-label">Exclure Monde, UE, Pays tiers</span>
+                    <label class="switch">
+                        <input type="checkbox" id="exclude-world" checked>
+                        <span class="slider round"></span>
+                    </label>
                 </div>
             </div>
         </aside>
@@ -114,9 +129,11 @@
             </div>
         </div>
 
+        <!-- Légende de la carte -->
+        <div id="map-legend"></div>
+
         <!-- Tooltip Carte -->
         <div id="map-tooltip">
-            <p> y a rien </p>
         </div>
 
     </div>

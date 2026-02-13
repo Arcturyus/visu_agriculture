@@ -122,6 +122,13 @@ function initListeners() {
 
     // Écouteur sur le switch "Monde"
     d3.select("#exclude-world").on("change", updateApp);
+
+    // Écouteur sur les chips viande
+    d3.selectAll('input[name="viande"]').on("change", () => {
+        d3.selectAll('.meat-chip').classed('active', false);
+        d3.select(event.target.closest('.meat-chip')).classed('active', true);
+        updateApp();
+    });
 }
 
 function startAnimation() {
@@ -204,17 +211,17 @@ function updateApp() {
     console.log(`Filtrage : Année=${isAllYears ? 'Toutes' : currentYear}, Indicateur=${indicateur}`);
     console.log("d.COMEXVIANDE_DIM2_LIBunique :", [...new Set(globalData.map(d => d.COMEXVIANDE_DIM2_LIB))].slice(0, 10)); // Affiche les 10 premiers pays uniques
 
+    // Filtre viande
+    const selectedMeat = d3.select('input[name="viande"]:checked').node().value;
+    const matchMeat = (d) => selectedMeat === "all" ? true : d.N500_LIB === selectedMeat;
+
     let filteredData = globalData.filter(d => {
-        // 1. Filtre Année : on utilise ANNREF
         const matchYear = isAllYears ? true : (d.ANNREF === currentYear);
-        
-        // 2. Filtre Monde
         let matchWorld = true;
         if (excludeWorld) {
             matchWorld = d.COMEXVIANDE_DIM2_LIB !== "Monde" && d.COMEXVIANDE_DIM2_LIB !== "_UE" && d.COMEXVIANDE_DIM2_LIB !== "_PAYS TIERS";
         }
-
-        return matchYear && matchWorld;
+        return matchYear && matchWorld && matchMeat(d);
     });
 
     // Debug pour voir si des données sortent après filtre
@@ -226,11 +233,16 @@ function updateApp() {
         if (excludeWorld) {
             matchWorld = d.COMEXVIANDE_DIM2_LIB !== "Monde" && d.COMEXVIANDE_DIM2_LIB !== "_UE" && d.COMEXVIANDE_DIM2_LIB !== "_PAYS TIERS";
         }
-        return matchWorld;
+        return matchWorld && matchMeat(d);
     });
 
-    // Rappel : drawWorldMap fait déjà la somme (d3.sum) des valeurs trouvées
-    // Donc si on a 12 mois pour 1 pays, il va bien les additionner !!!!!!!!!!
-    drawWorldMap(filteredData, indicateur, "#map-background");
+    // scaleData : filtré par année + viande, TOUJOURS hors Monde/UE/Pays tiers
+    let scaleData = globalData.filter(d => {
+        const matchYear = isAllYears ? true : (d.ANNREF === currentYear);
+        const isCountry = d.COMEXVIANDE_DIM2_LIB !== "Monde" && d.COMEXVIANDE_DIM2_LIB !== "_UE" && d.COMEXVIANDE_DIM2_LIB !== "_PAYS TIERS";
+        return matchYear && isCountry && matchMeat(d);
+    });
+
+    drawWorldMap(filteredData, indicateur, "#map-background", globalData, scaleData);
     updateRanking(rankingData, indicateur, currentYear, isAllYears);
 }
