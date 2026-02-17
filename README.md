@@ -1,44 +1,44 @@
-# visu_agriculture
+# Échanges de Viandes avec la France
 
-Projet de visualisation de données agricoles avec D3.js
+Carte interactive D3.js visualisant les imports/exports de viandes de la France de 1999 à 2025.
 
-## Structure du projet
+## Lancement
 
-```
-├── index.html          # Page principale et conteneurs D3
-├── css/
-│   └── style.css       # Feuille de styles
-├── data/
-│   └── (données à ajouter)
-├── js/
-│   ├── main.js         # Point d'entrée (chargement des données)
-│   ├── chart1.js       # Composant pour le premier graphique
-│   └── utils.js        # Fonctions d'aide (formatage de dates, échelles)
-├── assets/
-│   └── (ressources à ajouter)
-└── README.md           # Ce fichier
+Voir sur `https://arcturyus.github.io/visu_agriculture/`
+
+ou
+
+Servir le dossier localement (attention il faut les données CSV et le world.geojson) :
+
+```bash
+npx serve .
+# ou
+python -m http.server
 ```
 
-## Installation
+Puis ouvrir `http://localhost:3000` (ou `:8000`).
 
-1. Clonez ce repository
-2. Ouvrez `index.html` dans votre navigateur web
 
-## Utilisation
+## Fonctionnalités
 
-Le projet utilise D3.js version 7 (chargé via CDN). Les données et assets peuvent être ajoutés dans les dossiers correspondants.
+- **Carte** 
+- **Classement**
+- **Focus pays** — clic sur un pays → graphique temporel + stats détaillées
+- **Filtres** — indicateur (export/import/solde, en téc ou €), type de viande (15 catégories), année ou toutes années
+- **Animation temporelle** — lecture automatique année par année
 
-### Ajouter des données
+## Structure
 
-Placez vos fichiers de données (CSV, JSON, etc.) dans le dossier `data/` et modifiez `js/main.js` pour les charger.
+```
+index.html           # Page unique (layout + filtres)
+css/style.css        # Styles (glass panels, responsive)
+js/
+  main.js                # Chargement CSV, filtres, orchestration
+  worldMap.js            # Carte D3 + légende
+  ranking.js             # Chart classement
+  countryFocus.js        # Panneau détail pays (line chart + stats)
+data/
+  comexviande_pivot.csv  # Données pivot (source Agreste)
+  world.geojson          # Géométries pays pour faire la carte
+```
 
-### Ajouter des assets
-
-Placez vos images, icônes ou autres ressources dans le dossier `assets/`.
-
-## Développement
-
-- `js/main.js` : Point d'entrée de l'application, gère le chargement des données
-- `js/chart1.js` : Composant pour créer et gérer le premier graphique
-- `js/utils.js` : Fonctions utilitaires réutilisables (formatage, échelles, tooltips)
-- `css/style.css` : Styles de l'application et des graphiques
