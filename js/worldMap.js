@@ -47,6 +47,46 @@ export function drawWorldMap(data, indicateur, containerId, allData, scaleData) 
             .attr("stroke", "#ccc")
             .attr("stroke-width", 1.5);
 
+        // Filtre SVG : halo bleu radial pour la France
+        const glowFilter = defs.append("filter")
+            .attr("id", "france-glow")
+            .attr("x", "-50%").attr("y", "-50%")
+            .attr("width", "200%").attr("height", "200%");
+
+        // 1er halo : large et doux
+        glowFilter.append("feGaussianBlur")
+            .attr("in", "SourceGraphic")
+            .attr("stdDeviation", "7")
+            .attr("result", "blur1");
+        glowFilter.append("feFlood")
+            .attr("flood-color", "#c1e7f9")
+            .attr("flood-opacity", "0.6")
+            .attr("result", "color1");
+        glowFilter.append("feComposite")
+            .attr("in", "color1").attr("in2", "blur1")
+            .attr("operator", "in")
+            .attr("result", "glow1");
+
+        // 2e halo : plus resserré, plus intense
+        glowFilter.append("feGaussianBlur")
+            .attr("in", "SourceGraphic")
+            .attr("stdDeviation", "3")
+            .attr("result", "blur2");
+        glowFilter.append("feFlood")
+            .attr("flood-color", "#039be5")
+            .attr("flood-opacity", "0.8")
+            .attr("result", "color2");
+        glowFilter.append("feComposite")
+            .attr("in", "color2").attr("in2", "blur2")
+            .attr("operator", "in")
+            .attr("result", "glow2");
+
+        // Fusion des deux halos + source par-dessus
+        const merge = glowFilter.append("feMerge");
+        merge.append("feMergeNode").attr("in", "glow1");
+        merge.append("feMergeNode").attr("in", "glow2");
+        merge.append("feMergeNode").attr("in", "SourceGraphic");
+
         // 2. Projection
         projection = d3.geoNaturalEarth1()
             .scale(width / 6)
@@ -178,7 +218,7 @@ function updateColors(data, indicateur, allData, scaleData) {
             // France : couleur + glow spécial
             if (csvName === "France") {
                 d3.select(this).classed("country-france", true);
-                return val !== undefined ? colorScale(numVal) : "#ffffff";
+                return val !== undefined ? colorScale(numVal) : "#dafafc";
             }
             d3.select(this).classed("country-france", false);
 
@@ -265,10 +305,8 @@ function initClickFocus() {
         const mapping = getCountryMapping();
         const countryNameGeo = d.properties.name;
         const csvName = mapping[countryNameGeo] || countryNameGeo;
-        const val = this._currentValue || 0;
 
-        // Toggle : si on re-clique sur le même pays, on défocus
-        if (focusedCountryName === csvName) {
+        if (focusedCountryName === csvName) { // si reclique.
             clearFocus();
             return;
         }
@@ -278,8 +316,8 @@ function initClickFocus() {
         // Overlay animé
         drawFocusedBorder(d);
 
-        // Mise à jour du panneau info
-        updateInfoPanel(countryNameGeo, csvName, val);
+        // Dispatch un événement pour que main.js mette à jour le panneau focus
+        document.dispatchEvent(new CustomEvent('country-focus-changed'));
     });
 }
 
@@ -287,7 +325,8 @@ function initClickFocus() {
 export function clearFocus() {
     focusedCountryName = null;
     if (focusedOverlay) focusedOverlay.selectAll("*").remove();
-    d3.select("#info-country-focused").html("");
+    // Le nettoyage du panneau info est géré par main.js via l'événement
+    document.dispatchEvent(new Event('country-focus-cleared'));
 }
 
 export function getFocusedCountry() {
@@ -324,30 +363,7 @@ function drawFocusedBorder(feature) {
         .attr("class", "focus-border-secondary");
 }
 
-// Met à jour le panneau info pays
-function updateInfoPanel(geoName, csvName, value) {
-    const cleanName = csvName.replace(/^_+/, "").replace(/_/g, " ");
-    const panel = d3.select("#info-country-focused");
 
-    panel.html(`
-        <div class="focused-country-card">
-            <div class="focused-country-header">
-                <i class="fas fa-map-marker-alt focused-icon"></i>
-                <span class="focused-country-name">${cleanName}</span>
-            </div>
-            <div class="focused-country-value">
-                <span class="focused-label">Valeur actuelle</span>
-                <span class="focused-number">${d3.format(",.0f")(value)}</span>
-            </div>
-            <button class="btn-clear-focus" onclick="document.dispatchEvent(new Event('clear-focus'))">
-                <i class="fas fa-times"></i> Retirer le focus
-            </button>
-        </div>
-    `);
-
-    // Listener pour le bouton
-    panel.select(".btn-clear-focus").on("click", () => clearFocus());
-}
 
 // --- GESTION DES TOOLTIPS ---
 function initTooltips() {

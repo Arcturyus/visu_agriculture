@@ -66,21 +66,21 @@
             <div class="control-section">
                 <label class="section-title">Type de viande</label>
                 <div class="meat-grid" id="meat-container">
-                    <label class="meat-chip active"><input type="radio" name="viande" value="all" checked><span class="meat-icon">🍖</span><span class="meat-label">Toutes</span></label>
-                    <label class="meat-chip"><input type="radio" name="viande" value="Viande bovine avec onglet et hampe"><span class="meat-icon">🐂</span><span class="meat-label">Bovine</span></label>
-                    <label class="meat-chip"><input type="radio" name="viande" value="Viande porcine"><span class="meat-icon">🐷</span><span class="meat-label">Porcine</span></label>
-                    <label class="meat-chip"><input type="radio" name="viande" value="Viande ovine"><span class="meat-icon">🐑</span><span class="meat-label">Ovine</span></label>
-                    <label class="meat-chip"><input type="radio" name="viande" value="Viande caprine"><span class="meat-icon">🐐</span><span class="meat-label">Caprine</span></label>
-                    <label class="meat-chip"><input type="radio" name="viande" value="Viande d'animaux de boucherie"><span class="meat-icon">🪩</span><span class="meat-label">Boucherie</span></label>
-                    <label class="meat-chip"><input type="radio" name="viande" value="Viande de volailles de chair (n.c. petites espèces)"><span class="meat-icon">🐔</span><span class="meat-label">Volailles</span></label>
-                    <label class="meat-chip"><input type="radio" name="viande" value="viande de gallus"><span class="meat-icon">🐓</span><span class="meat-label">Gallus</span></label>
-                    <label class="meat-chip"><input type="radio" name="viande" value="viande de dinde"><span class="meat-icon">🦃</span><span class="meat-label">Dinde</span></label>
-                    <label class="meat-chip"><input type="radio" name="viande" value="viande de canard"><span class="meat-icon">🦆</span><span class="meat-label">Canard</span></label>
-                    <label class="meat-chip"><input type="radio" name="viande" value="Viande d'oie"><span class="meat-icon">🪶</span><span class="meat-label">Oie</span></label>
-                    <label class="meat-chip"><input type="radio" name="viande" value="Viande de pintade"><span class="meat-icon">🐦</span><span class="meat-label">Pintade</span></label>
-                    <label class="meat-chip"><input type="radio" name="viande" value="Viande d'équidés"><span class="meat-icon">🐎</span><span class="meat-label">Équidés</span></label>
-                    <label class="meat-chip"><input type="radio" name="viande" value="Graisse de porc"><span class="meat-icon">🧈</span><span class="meat-label">Graisse</span></label>
-                    <label class="meat-chip"><input type="radio" name="viande" value="Viande porcine  y compris graisse de porc"><span class="meat-icon">🐷</span><span class="meat-label">Porc+gr.</span></label>
+                    <label class="meat-chip meat-chip-all" data-meat="all"><input type="checkbox" name="viande" value="all" checked><span class="meat-icon">🍖</span><span class="meat-label">Toutes</span></label>
+                    <label class="meat-chip" data-meat="Viande bovine avec onglet et hampe"><input type="checkbox" name="viande" value="Viande bovine avec onglet et hampe"><span class="meat-icon">🐂</span><span class="meat-label">Bovine</span></label>
+                    <label class="meat-chip" data-meat="Viande porcine"><input type="checkbox" name="viande" value="Viande porcine"><span class="meat-icon">🐷</span><span class="meat-label">Porcine</span></label>
+                    <label class="meat-chip" data-meat="Viande ovine"><input type="checkbox" name="viande" value="Viande ovine"><span class="meat-icon">🐑</span><span class="meat-label">Ovine</span></label>
+                    <label class="meat-chip" data-meat="Viande caprine"><input type="checkbox" name="viande" value="Viande caprine"><span class="meat-icon">🐐</span><span class="meat-label">Caprine</span></label>
+                    <label class="meat-chip" data-meat="Viande d'animaux de boucherie"><input type="checkbox" name="viande" value="Viande d'animaux de boucherie"><span class="meat-icon">🪩</span><span class="meat-label">Boucherie</span></label>
+                    <label class="meat-chip" data-meat="Viande de volailles de chair (n.c. petites espèces)"><input type="checkbox" name="viande" value="Viande de volailles de chair (n.c. petites espèces)"><span class="meat-icon">🐔</span><span class="meat-label">Volailles</span></label>
+                    <label class="meat-chip" data-meat="viande de gallus"><input type="checkbox" name="viande" value="viande de gallus"><span class="meat-icon">🐓</span><span class="meat-label">Gallus</span></label>
+                    <label class="meat-chip" data-meat="viande de dinde"><input type="checkbox" name="viande" value="viande de dinde"><span class="meat-icon">🦃</span><span class="meat-label">Dinde</span></label>
+                    <label class="meat-chip" data-meat="viande de canard"><input type="checkbox" name="viande" value="viande de canard"><span class="meat-icon">🦆</span><span class="meat-label">Canard</span></label>
+                    <label class="meat-chip" data-meat="Viande d'oie"><input type="checkbox" name="viande" value="Viande d'oie"><span class="meat-icon">🪶</span><span class="meat-label">Oie</span></label>
+                    <label class="meat-chip" data-meat="Viande de pintade"><input type="checkbox" name="viande" value="Viande de pintade"><span class="meat-icon">🐦</span><span class="meat-label">Pintade</span></label>
+                    <label class="meat-chip" data-meat="Viande d'équidés"><input type="checkbox" name="viande" value="Viande d'équidés"><span class="meat-icon">🐎</span><span class="meat-label">Équidés</span></label>
+                    <label class="meat-chip" data-meat="Graisse de porc"><input type="checkbox" name="viande" value="Graisse de porc"><span class="meat-icon">🧈</span><span class="meat-label">Graisse</span></label>
+                    <label class="meat-chip" data-meat="Viande porcine  y compris graisse de porc"><input type="checkbox" name="viande" value="Viande porcine  y compris graisse de porc"><span class="meat-icon">🐷</span><span class="meat-label">Porc+gr.</span></label>
                 </div>
             </div>
 
@@ -115,7 +115,7 @@
                     <p class="helper-text" style="text-align:center; margin-top:10px;">Clique sur un pays de la carte</p>
                 </div>
             </aside>
-        </div>
+        </div> 
 
         <!-- Mon filtre avec le temps... -->
         <div class="timeline-container">

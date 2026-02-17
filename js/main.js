@@ -1,5 +1,6 @@
 import { drawWorldMap, clearFocus, getFocusedCountry } from './worldMap.js';
 import { updateRanking } from './ranking.js';
+import { updateCountryFocus, clearCountryFocus } from './countryFocus.js';
 
 let globalData = [];
 
@@ -123,12 +124,35 @@ function initListeners() {
     // Écouteur sur le switch "Monde"
     d3.select("#exclude-world").on("change", updateApp);
 
-    // Écouteur sur les chips viande
-    d3.selectAll('input[name="viande"]').on("change", () => {
-        d3.selectAll('.meat-chip').classed('active', false);
-        d3.select(event.target.closest('.meat-chip')).classed('active', true);
+    // Écouteur sur les chips viande (multi-sélection avec toggle)
+    d3.selectAll('input[name="viande"]').on("change", function(event) {
+        const value = this.value;
+        const isAllChip = value === "all";
+
+        if (isAllChip) {
+            // Cliquer "Toutes" → tout décocher sauf "Toutes", toujours coché
+            d3.selectAll('input[name="viande"]').property("checked", false);
+            d3.select('.meat-chip-all input').property("checked", true);
+        } else {
+            // Décocher "Toutes" si on sélectionne une viande spécifique
+            d3.select('.meat-chip-all input').property("checked", false);
+
+            // Vérifier s'il reste au moins une viande cochée
+            const anyChecked = d3.selectAll('input[name="viande"]:checked').nodes()
+                .some(n => n.value !== "all");
+
+            if (!anyChecked) {
+                // Plus rien de coché → retour à "Toutes"
+                d3.select('.meat-chip-all input').property("checked", true);
+            }
+        }
+
         updateApp();
     });
+
+    // Écouteurs pour le panneau focus pays
+    document.addEventListener('country-focus-changed', () => refreshCountryFocus());
+    document.addEventListener('country-focus-cleared', () => clearCountryFocus());
 }
 
 function startAnimation() {
@@ -204,16 +228,23 @@ function updateYearUI() {
     }
 }
 
+// Retourne le Set des viandes sélectionnées, ou null si "Toutes"
+function getSelectedMeats() {
+    const checked = d3.selectAll('input[name="viande"]:checked').nodes().map(n => n.value);
+    if (checked.includes("all") || checked.length === 0) return null; // null = toutes viandes
+    return new Set(checked);
+}
+
 function updateApp() {
     const indicateur = d3.select('input[name="indicateur"]:checked').node().value;
     const excludeWorld = d3.select("#exclude-world").property("checked");
 
     console.log(`Filtrage : Année=${isAllYears ? 'Toutes' : currentYear}, Indicateur=${indicateur}`);
-    console.log("d.COMEXVIANDE_DIM2_LIBunique :", [...new Set(globalData.map(d => d.COMEXVIANDE_DIM2_LIB))].slice(0, 10)); // Affiche les 10 premiers pays uniques
+    console.log("d.COMEXVIANDE_DIM2_LIBunique :", [...new Set(globalData.map(d => d.COMEXVIANDE_DIM2_LIB))].slice(0, 10));
 
-    // Filtre viande
-    const selectedMeat = d3.select('input[name="viande"]:checked').node().value;
-    const matchMeat = (d) => selectedMeat === "all" ? true : d.N500_LIB === selectedMeat;
+    // Filtre viande (multi-sélection)
+    const selectedMeats = getSelectedMeats(); // Set ou null
+    const matchMeat = (d) => selectedMeats === null ? true : selectedMeats.has(d.N500_LIB);
 
     let filteredData = globalData.filter(d => {
         const matchYear = isAllYears ? true : (d.ANNREF === currentYear);
@@ -245,4 +276,16 @@ function updateApp() {
 
     drawWorldMap(filteredData, indicateur, "#map-background", globalData, scaleData);
     updateRanking(rankingData, indicateur, currentYear, isAllYears);
+    refreshCountryFocus();
+}
+
+function refreshCountryFocus() {
+    const focused = getFocusedCountry();
+    if (focused) {
+        const indicateur = d3.select('input[name="indicateur"]:checked').node().value;
+        const selectedMeats = getSelectedMeats(); // Set ou null
+        const excludeWorld = d3.select("#exclude-world").property("checked");
+        updateCountryFocus(focused, globalData, indicateur, selectedMeats,
+                           currentYear, isAllYears, excludeWorld, () => clearFocus());
+    }
 }

@@ -261,8 +261,8 @@ input:checked + .slider:before { transform: translateX(18px); }
     width: 420px;
     top: auto;
     bottom: 80px;
-    height: 25vh;
-    max-height: 25vh;
+    height: 30vh;
+    max-height: 30vh;
 }
 
 /* Conteneur du graphique de ranking */
@@ -277,89 +277,181 @@ input:checked + .slider:before { transform: translateX(18px); }
 /* Panneau info pays en dessous */
 #info-country-focused {
     flex: 1;
+    overflow: hidden;
+    min-height: 0;
+}
+
+/* ===== FOCUS CARD (graphique + stats) ===== */
+.focus-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    gap: 6px;
+}
+
+.focus-hdr {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.focus-pin {
+    color: var(--accent);
+    font-size: 0.95rem;
+}
+
+.focus-name {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--primary);
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.focus-close {
+    background: none;
+    border: 1px solid #ddd;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #aaa;
+    font-size: 0.6rem;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    padding: 0;
+    font-family: inherit;
+}
+
+.focus-close:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+}
+
+.focus-body {
+    display: flex;
+    flex: 1;
+    gap: 10px;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.focus-chart {
+    flex: 3;
+    min-width: 0;
+    min-height: 0;
+    overflow: visible;
+}
+
+.focus-chart svg {
+    display: block;
+}
+
+.focus-stats {
+    flex: 2;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
     overflow-y: auto;
 }
 
-/* Carte du pays focused */
-.focused-country-card {
+/* Stats label */
+.stats-lbl {
+    font-size: 0.55rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #aaa;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+/* Stats grid 2×3 */
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px;
+    flex: 1;
+}
+
+.stat-cell {
+    background: #f5f6f7;
+    border-radius: 6px;
+    padding: 4px 6px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    justify-content: center;
+    border: 1.5px solid transparent;
+    transition: all 0.2s;
+    min-height: 0;
 }
 
-.focused-country-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+.stat-on {
+    background: #fff5f5;
+    border-color: var(--accent);
 }
 
-.focused-icon {
-    font-size: 1.3rem;
+.stat-top {
+    font-size: 0.55rem;
+    color: #888;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.3;
+}
+
+.stat-ico {
+    font-size: 0.5rem;
+    margin-right: 3px;
+    width: 10px;
+    text-align: center;
+}
+
+.stat-on .stat-ico {
     color: var(--accent);
 }
 
-@keyframes pulse-icon {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.2); opacity: 0.7; }
+.stat-bot {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    margin-top: 1px;
 }
 
-.focused-country-name {
-    font-size: 1.15rem;
+.stat-rank {
+    font-size: 0.8rem;
     font-weight: 800;
     color: var(--primary);
-    letter-spacing: 0.3px;
+    line-height: 1;
 }
 
-.focused-country-value {
-    display: flex;
-    flex-direction: column;
-    background: #fff5f5;
-    border-radius: 10px;
-    padding: 10px 14px;
-    border-left: 3px solid var(--accent);
+.stat-on .stat-rank {
+    color: var(--accent);
 }
 
-.focused-label {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+.stat-val {
+    font-size: 0.58rem;
     color: #999;
     font-weight: 600;
 }
 
-.focused-number {
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: var(--accent);
+/* Focus chart axes */
+.focus-axis text {
+    font-size: 0.55rem;
+    fill: #999;
 }
 
-.btn-clear-focus {
-    background: white;
-    border: 1px solid #ddd;
-    color: #888;
-    padding: 8px 14px;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 0.8rem;
-    font-weight: 600;
-    transition: all 0.2s;
-    font-family: inherit;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    align-self: flex-start;
-}
-
-.btn-clear-focus:hover {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: white;
-    transform: translateY(-1px);
-    box-shadow: 0 3px 8px rgba(231, 76, 60, 0.3);
-}
-
-.btn-clear-focus i {
-    font-size: 0.7rem;
+.focus-axis line,
+.focus-axis path {
+    stroke: #ddd;
 }
 
 .ranking-container svg {
@@ -589,11 +681,11 @@ svg.ocean-bg {
         #1a7ab5, #145f8a, #0b3d5e);
 }
 
-/* --- FRANCE : Halo blanc léger statique --- */
+/* --- FRANCE : Halo bleu radial (filtre SVG) --- */
 path.country-france {
-    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.8))
-            drop-shadow(0 0 12px rgba(255, 255, 255, 0.4));
-    color: black;
+    filter: url(#france-glow);
+    stroke: rgba(0, 128, 255, 0.5);
+    stroke-width: 1.2px;
 }
 
 /*  */

@@ -5,7 +5,8 @@ const cleanName = (name) => name.replace(/^_+/, "").replace(/_/g, " ");
 const RANK_COLORS = [
     "#e74c3c", "#3498db", "#29dc2c", "#f39c12", "#d3b5df",
     "#8e44ad", "#e67e22", "#343f4b", "#c0392b", "#16a097",
-    "#178f3d", "#053e64", "#8b4513", "#d35400", "#7f8c8d"
+    "#178f3d", "#053e64", "#8b4513", "#d35400", "#7f8c8d",
+    "#250133", "#d9eaf6", "rgb(187, 4, 98)"
 ];
 
 const TOP_N = 5; // On affiche les rangs 1 à 5
