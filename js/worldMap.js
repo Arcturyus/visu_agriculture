@@ -1,4 +1,5 @@
 // js/worldMap.js
+import { getFlag } from './flags.js';
 
 // --- VARIABLES GLOBALES (Pour garder la mémoire entre deux mises à jour) ---
 let svg, g, path, projection;
@@ -373,20 +374,121 @@ function initTooltips() {
         .on("mouseover", function(event, d) {
             // Récupérer la valeur stockée lors de l'updateColors
             const val = this._currentValue || 0;
+            const mapping = getCountryMapping();
+            const csvName = mapping[d.properties.name] || d.properties.name;
+            const flag = getFlag(csvName);
             
+            const displayName = getDisplayName(csvName);
             tooltip.style("opacity", 1)
                    .html(`
-                       <div style='font-weight:bold; margin-bottom:5px;'>${d.properties.name}</div>
+                       <div style='font-weight:bold; margin-bottom:5px;'><span style="font-size:1.6rem;vertical-align:middle">${flag}</span> ${displayName}</div>
                        <div style='color:#e74c3c;'>${d3.format(",.0f")(val)}</div>
                    `);
         })
         .on("mousemove", function(event) {
-            tooltip.style("left", (event.pageX + 15) + "px")
-                   .style("top", (event.pageY - 15) + "px");
+            const ttNode = tooltip.node();
+            const ttW = ttNode.offsetWidth;
+            const ttH = ttNode.offsetHeight;
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+
+            let left = event.pageX + 15;
+            let top  = event.pageY - 15;
+
+            // Empêcher le débordement à droite
+            if (left + ttW > vw - 10) {
+                left = event.pageX - ttW - 15;
+            }
+            // Empêcher le débordement en haut
+            if (top < 10) {
+                top = event.pageY + 20;
+            }
+            // Empêcher le débordement en bas
+            if (top + ttH > vh - 10) {
+                top = vh - ttH - 10;
+            }
+
+            tooltip.style("left", left + "px")
+                   .style("top",  top + "px");
         })
         .on("mouseout", function() {
             tooltip.style("opacity", 0);
         });
+}
+
+// --- NOM COURT FRANÇAIS (CSV → affichage propre) ---
+const displayNames = {
+    "__Algerie": "Algérie",
+    "__Allemagne": "Allemagne",
+    "__Arabie saoudite": "Arabie saoudite",
+    "__Argentine": "Argentine",
+    "__Australie": "Australie",
+    "__Autriche": "Autriche",
+    "__Belgique": "Belgique",
+    "__Benin": "Bénin",
+    "__Bresil": "Brésil",
+    "__Bulgarie": "Bulgarie",
+    "__Canada": "Canada",
+    "__Chili": "Chili",
+    "__Chypre": "Chypre",
+    "__Congo": "Congo",
+    "__Coree Du Sud": "Corée du Sud",
+    "__Croatie": "Croatie",
+    "__Danemark": "Danemark",
+    "__Egypte": "Égypte",
+    "__Emirats Arabes Unis": "Émirats (E.A.U.)",
+    "__Espagne (y compris Canaries)": "Espagne",
+    "__Estonie": "Estonie",
+    "__Etats-Unis": "États-Unis",
+    "__Finlande": "Finlande",
+    "__Gabon": "Gabon",
+    "__Ghana": "Ghana",
+    "__Grèce": "Grèce",
+    "__Hong-kong": "Hong Kong",
+    "__Hongrie": "Hongrie",
+    "__Irlande": "Irlande",
+    "__Italie": "Italie",
+    "__Japon": "Japon",
+    "__Koweit": "Koweït",
+    "__Lettonie": "Lettonie",
+    "__Lituanie": "Lituanie",
+    "__Luxembourg": "Luxembourg",
+    "__Malte": "Malte",
+    "__Maroc": "Maroc",
+    "__Nouvelle-zelande": "Nouvelle-Zélande",
+    "__Oman": "Oman",
+    "__Pays-Bas": "Pays-Bas",
+    "__Philippines": "Philippines",
+    "__Pologne": "Pologne",
+    "__Portugal": "Portugal",
+    "__Qatar": "Qatar",
+    "__Republique Democratique Du Congo": "Congo (R.D.C.)",
+    "__Republique Populaire De Chine": "Chine",
+    "__Roumanie": "Roumanie",
+    "__Royaume-uni": "Royaume-Uni",
+    "__Russie": "Russie",
+    "__République tchèque": "Tchéquie",
+    "__Singapour": "Singapour",
+    "__Slovaquie": "Slovaquie",
+    "__Slovénie": "Slovénie",
+    "__Suisse": "Suisse",
+    "__Suède": "Suède",
+    "__Thailande": "Thaïlande",
+    "__Togo": "Togo",
+    "__Ukraine": "Ukraine",
+    "__Uruguay": "Uruguay",
+    "__Vietnam": "Vietnam",
+    "__Yemen": "Yémen",
+    "France": "France"
+};
+
+/**
+ * Retourne le nom court français d'un pays à partir de son nom CSV.
+ * Fallback : supprime les "__" et remplace les "_" par des espaces.
+ */
+export function getDisplayName(csvName) {
+    if (displayNames[csvName]) return displayNames[csvName];
+    return csvName.replace(/^_+/, "").replace(/_/g, " ");
 }
 
 // --- MAPPING PAYS (INCHANGÉ) ---

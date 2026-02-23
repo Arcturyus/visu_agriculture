@@ -1,6 +1,6 @@
 // js/ranking.js
-
-const cleanName = (name) => name.replace(/^_+/, "").replace(/_/g, " ");
+import { getFlag } from './flags.js';
+import { getDisplayName } from './worldMap.js';
 
 const RANK_COLORS = [
     "#e74c3c", "#3498db", "#29dc2c", "#f39c12", "#d3b5df",
@@ -79,7 +79,7 @@ export function updateRanking(allData, indicateur, currentYear, isAllYears) {
     }).filter(s => s.values.length > 0);
 
     // 5. Dimensions du graphique (moitié hauteur)
-    const margin = { top: 15, right: 10, bottom: 30, left: 25 };
+    const margin = { top: 15, right: 10, bottom: 30, left: 45 };
     const rect = container.node().getBoundingClientRect();
     const width = Math.max(rect.width - margin.left - margin.right - 5, 200);
     const maxH = rect.height * 0.5;
@@ -110,11 +110,20 @@ export function updateRanking(allData, indicateur, currentYear, isAllYears) {
             .ticks(Math.min(years.length, 8))
         );
 
+    // Récupérer le classement de la première année pour les drapeaux sur l'axe Y
+    const firstYearRanking = rankingsByYear.get(years[0]) || [];
+    const medals = ["🥇", "🥈", "🥉"];
+
     svg.append("g")
         .attr("class", "rank-axis")
         .call(d3.axisLeft(y)
             .ticks(TOP_N)
-            .tickFormat(d => `#${d}`)
+            .tickFormat(d => {
+                const medal = d <= 3 ? medals[d - 1] : `#${d}`;
+                const entry = firstYearRanking.find(e => e.rank === d);
+                const flag = entry ? getFlag(entry.country) : "";
+                return `${medal} ${flag}`;
+            })
         );
 
     // Grille horizontale légère
@@ -153,9 +162,13 @@ export function updateRanking(allData, indicateur, currentYear, isAllYears) {
     }
 
     // 10. Dessiner les lignes (segments continus seulement entre années consécutives)
-    const tooltip = container.append("div")
-        .attr("class", "rank-tooltip")
-        .style("opacity", 0);
+    // Tooltip attaché au body pour ne pas être clippé par le conteneur
+    let tooltip = d3.select("body").select(".rank-tooltip");
+    if (tooltip.empty()) {
+        tooltip = d3.select("body").append("div")
+            .attr("class", "rank-tooltip")
+            .style("opacity", 0);
+    }
 
     series.forEach(s => {
         // Découper en segments continus (années consécutives)
@@ -204,13 +217,14 @@ export function updateRanking(allData, indicateur, currentYear, isAllYears) {
             .style("cursor", "pointer")
             .on("mouseover", function (event, d) {
                 d3.select(this).attr("r", 5).attr("stroke", s.color).attr("stroke-width", 2).attr("fill", "white");
+                const flag = getFlag(s.country);
                 tooltip
                     .style("opacity", 1)
-                    .html(`<strong>${cleanName(s.country)}</strong><br/>
+                    .html(`<strong><span style="font-size:1.4rem;vertical-align:middle">${flag}</span> ${getDisplayName(s.country)}</strong><br/>
                            ${d.year} — Rang #${d.rank}<br/>
                            ${d3.format(",.0f")(d.value)}`)
-                    .style("left", (event.offsetX + 10) + "px")
-                    .style("top", (event.offsetY - 30) + "px");
+                    .style("left", (event.pageX - 100) + "px")
+                    .style("top", (event.pageY + 8) + "px");
             })
             .on("mouseout", function () {
                 d3.select(this).attr("r", 2.5).attr("stroke", "none").attr("fill", s.color);
@@ -220,14 +234,14 @@ export function updateRanking(allData, indicateur, currentYear, isAllYears) {
 
     // 11. Légende dédiée en dessous du graphique (tous les pays, même ceux sortis du top)
     const legendY = height + margin.top + margin.bottom + 5;
-    const legendCols = 2;
+    const legendCols = 3;
     const colWidth = (width + margin.left + margin.right) / legendCols;
     const legendItemH = 16;
 
     const legendG = container.select("svg")
         .attr("height", height + margin.top + margin.bottom + 10 + Math.ceil(series.length / legendCols) * legendItemH)
         .append("g")
-        .attr("transform", `translate(${margin.left}, ${legendY})`);
+        .attr("transform", `translate(5, ${legendY})`);
 
     series.forEach((s, i) => {
         const col = i % legendCols;
@@ -247,11 +261,12 @@ export function updateRanking(allData, indicateur, currentYear, isAllYears) {
             .attr("cx", 8).attr("cy", 0).attr("r", 2.5)
             .attr("fill", s.color);
 
+        const flag = getFlag(s.country);
         g.append("text")
             .attr("x", 22).attr("y", 0)
             .attr("dy", "0.35em")
-            .attr("font-size", "0.6rem")
+            .attr("font-size", "0.75rem")
             .attr("fill", "#444")
-            .text(cleanName(s.country));
+            .text(`${getDisplayName(s.country)} ${flag}`);
     });
 }

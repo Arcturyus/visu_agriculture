@@ -301,6 +301,11 @@ input:checked + .slider:before { transform: translateX(18px); }
     font-size: 0.95rem;
 }
 
+.focus-flag {
+    font-size: 1.8rem;
+    line-height: 1;
+}
+
 .focus-name {
     font-size: 0.95rem;
     font-weight: 800;
@@ -461,7 +466,7 @@ input:checked + .slider:before { transform: translateX(18px); }
 
 /* Axes du graphique */
 .rank-axis text {
-    font-size: 0.7rem;
+    font-size:0.85rem;
     fill: #666;
 }
 
@@ -482,7 +487,7 @@ input:checked + .slider:before { transform: translateX(18px); }
     color: #333;
     border: 1px solid #eee;
     transition: opacity 0.15s;
-    z-index: 10;
+    z-index: 99999;
     white-space: nowrap;
 }
 

@@ -1,4 +1,6 @@
 // js/countryFocus.js — Panneau "Pays sélectionné" : graphique temporel + stats multi-indicateurs
+import { getFlag } from './flags.js';
+import { getDisplayName } from './worldMap.js';
 
 const INDICATEURS = [
     { key: "Exportations de viandes et préparations (téc)", label: "Exp. Tèc", icon: "fa-ship" },
@@ -30,7 +32,7 @@ export function clearCountryFocus() {
 export function updateCountryFocus(csvName, allData, currentIndicateur, selectedMeats,
                                     currentYear, isAllYears, excludeWorld, clearCallback) {
     const panel = d3.select("#info-country-focused");
-    const name  = csvName.replace(/^_+/, "").replace(/_/g, " ");
+    const name  = getDisplayName(csvName);
 
     panel.html("");
 
@@ -38,7 +40,8 @@ export function updateCountryFocus(csvName, allData, currentIndicateur, selected
 
     /* ── Header ── */
     const hdr = card.append("div").attr("class", "focus-hdr");
-    hdr.append("i").attr("class", "fas fa-map-marker-alt focus-pin");
+    const flag = getFlag(csvName);
+    hdr.append("span").attr("class", "focus-flag").text(flag);
     hdr.append("span").attr("class", "focus-name").text(name);
     const closeBtn = hdr.append("button").attr("class", "focus-close");
     closeBtn.append("i").attr("class", "fas fa-times");
@@ -59,7 +62,10 @@ export function updateCountryFocus(csvName, allData, currentIndicateur, selected
 /* ═══════════════════════  CHART  ═══════════════════════ */
 
 function drawChart(container, csvName, allData, indicateur, selectedMeats, currentYear, isAllYears) {
-    const match = d => selectedMeats === null || selectedMeats.has(d.N500_LIB);
+    const match = d => {
+        if (selectedMeats === null) return d.N500_LIB === "TOTAL VIANDES";
+        return selectedMeats.has(d.N500_LIB);
+    };
     const rows  = allData.filter(d => d.COMEXVIANDE_DIM2_LIB === csvName && match(d));
     const byYr  = d3.rollup(rows, v => d3.sum(v, d => d[indicateur] || 0), d => d.ANNREF);
     const years = [...byYr.keys()].sort((a, b) => a - b);

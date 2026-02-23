@@ -26,8 +26,8 @@ d3.csv("data/comexviande_pivot.csv", d => {
     let n053 = d.N053_LIB ? String(d.N053_LIB).trim() : "";
     let pays = d.COMEXVIANDE_DIM2_LIB ? String(d.COMEXVIANDE_DIM2_LIB).trim() : "";
     
-    // 2. Filtre de sécurité : on ignore les lignes de totaux
-    if (n500 === "TOTAL VIANDES" || n053 === "Total annuel") return null;
+    // 2. Filtre de sécurité : on ignore les lignes de totaux mensuels
+    if (n053 === "Total annuel") return null;
 
     // 3. Conversion MANUELLE (plus sûr que autoType ici)
     // On crée un nouvel objet propre
@@ -243,8 +243,13 @@ function updateApp() {
     console.log("d.COMEXVIANDE_DIM2_LIBunique :", [...new Set(globalData.map(d => d.COMEXVIANDE_DIM2_LIB))].slice(0, 10));
 
     // Filtre viande (multi-sélection)
+    // Si "Toutes" → on utilise la ligne TOTAL VIANDES du CSV
+    // Si viandes spécifiques → on filtre par ces viandes (en excluant TOTAL VIANDES)
     const selectedMeats = getSelectedMeats(); // Set ou null
-    const matchMeat = (d) => selectedMeats === null ? true : selectedMeats.has(d.N500_LIB);
+    const matchMeat = (d) => {
+        if (selectedMeats === null) return d.N500_LIB === "TOTAL VIANDES";
+        return selectedMeats.has(d.N500_LIB);
+    };
 
     let filteredData = globalData.filter(d => {
         const matchYear = isAllYears ? true : (d.ANNREF === currentYear);
