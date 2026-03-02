@@ -4,11 +4,11 @@ import { getDisplayName } from './worldMap.js';
 
 const INDICATEURS = [
     { key: "Exportations de viandes et préparations (téc)", label: "Exp. Tèc", icon: "fa-ship" },
-    { key: "Exportations de viandes et préparations (€)",   label: "Exp. €",   icon: "fa-euro-sign" },
+    { key: "Exportations de viandes et préparations (€)",   label: "Exp. k€",   icon: "fa-euro-sign" },
     { key: "Importation de viandes et préparations (téc)",  label: "Imp. Tèc", icon: "fa-box-open" },
-    { key: "Importation de viandes et préparations (€)",    label: "Imp. €",   icon: "fa-hand-holding-usd" },
+    { key: "Importation de viandes et préparations (€)",    label: "Imp. k€",   icon: "fa-hand-holding-usd" },
     { key: "Solde des échanges de viandes et préparations (téc)", label: "Solde Tèc", icon: "fa-balance-scale" },
-    { key: "Solde des échanges de viandes et préparations (€)",   label: "Solde €",   icon: "fa-coins" }
+    { key: "Solde des échanges de viandes et préparations (€)",   label: "Solde k€",   icon: "fa-coins" }
 ];
 
 function fmt(val) {
