@@ -9,6 +9,7 @@ let isMapLoaded = false; // Pour savoir si la carte est prête
 // --- PAYS FOCUSED ---
 let focusedCountryName = null; // Nom CSV du pays focus
 let focusedOverlay = null;     // Groupe SVG pour l'overlay animé
+let currentIndicateurName = ""; // Indicateur courant (pour tooltip)
 
 // --- FONCTION PRINCIPALE ---
 export function drawWorldMap(data, indicateur, containerId, allData, scaleData) {
@@ -157,6 +158,7 @@ export function drawWorldMap(data, indicateur, containerId, allData, scaleData) 
 function updateColors(data, indicateur, allData, scaleData) {
     if (!countriesSelection) return;
 
+    currentIndicateurName = indicateur;
     console.log("Mise à jour des couleurs pour :", indicateur);
 
     // 1. Agrégation des données filtrées (pour l'affichage)
@@ -379,10 +381,13 @@ function initTooltips() {
             const flag = getFlag(csvName);
             
             const displayName = getDisplayName(csvName);
+            // Extraire l'unité de l'indicateur courant
+            const unitMatch = currentIndicateurName.match(/\(([^)]+)\)/);
+            const unit = unitMatch ? unitMatch[1] : "";
             tooltip.style("opacity", 1)
                    .html(`
                        <div style='font-weight:bold; margin-bottom:5px;'><span style="font-size:1.6rem;vertical-align:middle">${flag}</span> ${displayName}</div>
-                       <div style='color:#e74c3c;'>${d3.format(",.0f")(val)}</div>
+                       <div style='color:#e74c3c;'>${d3.format(",.0f")(val)} ${unit}</div>
                    `);
         })
         .on("mousemove", function(event) {

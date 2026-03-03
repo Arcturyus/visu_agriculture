@@ -4,11 +4,11 @@ import { getDisplayName } from './worldMap.js';
 
 const INDICATEURS = [
     { key: "Exportations de viandes et préparations (téc)", label: "Exp. Tèc", icon: "fa-ship" },
-    { key: "Exportations de viandes et préparations (€)",   label: "Exp. k€",   icon: "fa-euro-sign" },
+    { key: "Exportations de viandes et préparations (€)",   label: "Exp. €",   icon: "fa-euro-sign" },
     { key: "Importation de viandes et préparations (téc)",  label: "Imp. Tèc", icon: "fa-box-open" },
-    { key: "Importation de viandes et préparations (€)",    label: "Imp. k€",   icon: "fa-hand-holding-usd" },
+    { key: "Importation de viandes et préparations (€)",    label: "Imp. €",   icon: "fa-hand-holding-usd" },
     { key: "Solde des échanges de viandes et préparations (téc)", label: "Solde Tèc", icon: "fa-balance-scale" },
-    { key: "Solde des échanges de viandes et préparations (€)",   label: "Solde k€",   icon: "fa-coins" }
+    { key: "Solde des échanges de viandes et préparations (€)",   label: "Solde €",   icon: "fa-coins" }
 ];
 
 function fmt(val) {
@@ -62,6 +62,7 @@ export function updateCountryFocus(csvName, allData, currentIndicateur, selected
 /* ═══════════════════════  CHART  ═══════════════════════ */
 
 function drawChart(container, csvName, allData, indicateur, selectedMeats, currentYear, isAllYears) {
+    const isSolde = indicateur.includes("Solde");
     const match = d => {
         if (selectedMeats === null) return d.N500_LIB === "TOTAL VIANDES";
         return selectedMeats.has(d.N500_LIB);
@@ -94,25 +95,84 @@ function drawChart(container, csvName, allData, indicateur, selectedMeats, curre
     const lo  = Math.min(0, ext[0]), hi = Math.max(0, ext[1]) || 1;
     const y   = d3.scaleLinear().domain([lo, hi]).nice().range([h, 0]);
 
-    /* Gradient */
-    const gid  = "fcg" + Math.random().toString(36).slice(2, 8);
     const defs = svg.append("defs");
-    const grad = defs.append("linearGradient").attr("id", gid)
-        .attr("x1","0%").attr("y1","0%").attr("x2","0%").attr("y2","100%");
-    grad.append("stop").attr("offset","0%") .attr("stop-color","#e74c3c").attr("stop-opacity", 0.25);
-    grad.append("stop").attr("offset","100%").attr("stop-color","#e74c3c").attr("stop-opacity", 0.02);
 
-    /* Area */
-    svg.append("path").datum(pts)
-        .attr("fill", `url(#${gid})`)
-        .attr("d", d3.area()
+    if (isSolde) {
+        /* ── Solde : aire verte au-dessus de 0, rouge en-dessous ── */
+        const gidPos = "fcgP" + Math.random().toString(36).slice(2, 8);
+        const gidNeg = "fcgN" + Math.random().toString(36).slice(2, 8);
+        const clipPos = "clipP" + Math.random().toString(36).slice(2, 8);
+        const clipNeg = "clipN" + Math.random().toString(36).slice(2, 8);
+
+        // Gradient vert (positif)
+        const gradP = defs.append("linearGradient").attr("id", gidPos)
+            .attr("x1","0%").attr("y1","0%").attr("x2","0%").attr("y2","100%");
+        gradP.append("stop").attr("offset","0%").attr("stop-color","#27ae60").attr("stop-opacity", 0.3);
+        gradP.append("stop").attr("offset","100%").attr("stop-color","#27ae60").attr("stop-opacity", 0.02);
+
+        // Gradient rouge (négatif)
+        const gradN = defs.append("linearGradient").attr("id", gidNeg)
+            .attr("x1","0%").attr("y1","0%").attr("x2","0%").attr("y2","100%");
+        gradN.append("stop").attr("offset","0%").attr("stop-color","#e74c3c").attr("stop-opacity", 0.02);
+        gradN.append("stop").attr("offset","100%").attr("stop-color","#e74c3c").attr("stop-opacity", 0.3);
+
+        // Clip-path : au-dessus de la ligne 0
+        defs.append("clipPath").attr("id", clipPos)
+            .append("rect").attr("x", 0).attr("y", 0)
+            .attr("width", w).attr("height", y(0));
+
+        // Clip-path : en-dessous de la ligne 0
+        defs.append("clipPath").attr("id", clipNeg)
+            .append("rect").attr("x", 0).attr("y", y(0))
+            .attr("width", w).attr("height", h - y(0));
+
+        const areaGen = d3.area()
             .x(d => x(d.year)).y0(y(0)).y1(d => y(d.value))
-            .curve(d3.curveMonotoneX));
+            .curve(d3.curveMonotoneX);
 
-    /* Line */
-    svg.append("path").datum(pts)
-        .attr("fill","none").attr("stroke","#e74c3c").attr("stroke-width", 2)
-        .attr("d", d3.line().x(d => x(d.year)).y(d => y(d.value)).curve(d3.curveMonotoneX));
+        // Aire verte (positive)
+        svg.append("path").datum(pts)
+            .attr("fill", `url(#${gidPos})`)
+            .attr("clip-path", `url(#${clipPos})`)
+            .attr("d", areaGen);
+
+        // Aire rouge (négative)
+        svg.append("path").datum(pts)
+            .attr("fill", `url(#${gidNeg})`)
+            .attr("clip-path", `url(#${clipNeg})`)
+            .attr("d", areaGen);
+
+        // Ligne verte au-dessus de 0
+        svg.append("path").datum(pts)
+            .attr("fill","none").attr("stroke","#27ae60").attr("stroke-width", 2)
+            .attr("clip-path", `url(#${clipPos})`)
+            .attr("d", d3.line().x(d => x(d.year)).y(d => y(d.value)).curve(d3.curveMonotoneX));
+
+        // Ligne rouge en-dessous de 0
+        svg.append("path").datum(pts)
+            .attr("fill","none").attr("stroke","#e74c3c").attr("stroke-width", 2)
+            .attr("clip-path", `url(#${clipNeg})`)
+            .attr("d", d3.line().x(d => x(d.year)).y(d => y(d.value)).curve(d3.curveMonotoneX));
+    } else {
+        /* ── Indicateur normal : rouge classique ── */
+        const gid  = "fcg" + Math.random().toString(36).slice(2, 8);
+        const grad = defs.append("linearGradient").attr("id", gid)
+            .attr("x1","0%").attr("y1","0%").attr("x2","0%").attr("y2","100%");
+        grad.append("stop").attr("offset","0%") .attr("stop-color","#e74c3c").attr("stop-opacity", 0.25);
+        grad.append("stop").attr("offset","100%").attr("stop-color","#e74c3c").attr("stop-opacity", 0.02);
+
+        /* Area */
+        svg.append("path").datum(pts)
+            .attr("fill", `url(#${gid})`)
+            .attr("d", d3.area()
+                .x(d => x(d.year)).y0(y(0)).y1(d => y(d.value))
+                .curve(d3.curveMonotoneX));
+
+        /* Line */
+        svg.append("path").datum(pts)
+            .attr("fill","none").attr("stroke","#e74c3c").attr("stroke-width", 2)
+            .attr("d", d3.line().x(d => x(d.year)).y(d => y(d.value)).curve(d3.curveMonotoneX));
+    }
 
     /* Zero baseline (pour le solde) */
     if (lo < 0) {
@@ -125,19 +185,23 @@ function drawChart(container, csvName, allData, indicateur, selectedMeats, curre
     if (!isAllYears) {
         const xp = x(currentYear);
         if (xp >= 0 && xp <= w) {
+            const markerColor = isSolde
+                ? (pts.find(p => p.year === currentYear)?.value >= 0 ? "#27ae60" : "#e74c3c")
+                : "#e74c3c";
             svg.append("line")
                 .attr("x1",xp).attr("x2",xp).attr("y1",0).attr("y2",h)
-                .attr("stroke","#e74c3c").attr("stroke-width",1.5)
+                .attr("stroke",markerColor).attr("stroke-width",1.5)
                 .attr("stroke-dasharray","4,3").attr("opacity",0.4);
             const pt = pts.find(p => p.year === currentYear);
             if (pt) {
+                const dotColor = isSolde ? (pt.value >= 0 ? "#27ae60" : "#e74c3c") : "#e74c3c";
                 svg.append("circle")
                     .attr("cx",xp).attr("cy",y(pt.value)).attr("r",4)
-                    .attr("fill","#e74c3c").attr("stroke","#fff").attr("stroke-width",2);
+                    .attr("fill",dotColor).attr("stroke","#fff").attr("stroke-width",2);
                 svg.append("text")
                     .attr("x",xp).attr("y", y(pt.value) - 9)
                     .attr("text-anchor","middle").attr("font-size","0.58rem")
-                    .attr("font-weight","700").attr("fill","#e74c3c")
+                    .attr("font-weight","700").attr("fill",dotColor)
                     .text(fmt(pt.value));
             }
         }
@@ -157,7 +221,7 @@ function drawChart(container, csvName, allData, indicateur, selectedMeats, curre
         .style("display","none").attr("pointer-events","none");
 
     const hoverDot = svg.append("circle")
-        .attr("r",3.5).attr("fill","#e74c3c").attr("stroke","#fff").attr("stroke-width",1.5)
+        .attr("r",3.5).attr("fill",isSolde ? "#888" : "#e74c3c").attr("stroke","#fff").attr("stroke-width",1.5)
         .style("display","none").attr("pointer-events","none");
 
     const hoverText = svg.append("text")
@@ -176,12 +240,14 @@ function drawChart(container, csvName, allData, indicateur, selectedMeats, curre
             const d    = (!d1 || Math.abs(yr - d0.year) < Math.abs(yr - d1.year)) ? d0 : (d1 || d0);
 
             hoverLine.attr("x1",x(d.year)).attr("x2",x(d.year)).style("display",null);
-            hoverDot .attr("cx",x(d.year)).attr("cy",y(d.value)).style("display",null);
+            const hColor = isSolde ? (d.value >= 0 ? "#27ae60" : "#e74c3c") : "#e74c3c";
+            hoverDot .attr("cx",x(d.year)).attr("cy",y(d.value)).attr("fill", hColor).style("display",null);
 
             const anchor = x(d.year) > w * 0.75 ? "end" : x(d.year) < w * 0.25 ? "start" : "middle";
             hoverText
                 .attr("x", x(d.year)).attr("y", y(d.value) - 9)
                 .attr("text-anchor", anchor)
+                .attr("fill", hColor)
                 .text(`${d.year} : ${fmt(d.value)}`)
                 .style("display", null);
         })
@@ -218,11 +284,15 @@ function drawStats(container, csvName, allData, currentIndicateur, currentYear, 
         const val  = idx >= 0 ? arr[idx].v : 0;
         const on   = ind.key === currentIndicateur;
 
+        const isSoldeInd = ind.key.includes("Solde");
         const cell = grid.append("div").attr("class", "stat-cell" + (on ? " stat-on" : ""));
         cell.append("div").attr("class", "stat-top")
             .html(`<i class="fas ${ind.icon} stat-ico"></i>${ind.label}`);
         const bot = cell.append("div").attr("class", "stat-bot");
         bot.append("span").attr("class", "stat-rank").text(`#${rank}`);
-        bot.append("span").attr("class", "stat-val").text(fmt(val));
+        const valSpan = bot.append("span").attr("class", "stat-val").text(fmt(val));
+        if (isSoldeInd && idx >= 0) {
+            valSpan.style("color", val >= 0 ? "#27ae60" : "#e74c3c");
+        }
     });
 }

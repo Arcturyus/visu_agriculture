@@ -260,6 +260,21 @@ function updateApp() {
         return matchYear && matchWorld && matchMeat(d);
     });
 
+    // Conversion k€ → € pour les indicateurs en euros
+    const isEuro = indicateur.includes("(€)");
+    const multiplyEuro = (arr) => arr.map(d => {
+        const copy = { ...d };
+        Object.keys(copy).forEach(key => {
+            if (key.includes("(€)")) {
+                copy[key] = copy[key] * 1000;
+            }
+        });
+        return copy;
+    });
+    if (isEuro) {
+        filteredData = multiplyEuro(filteredData);
+    }
+
     // Debug pour voir si des données sortent après filtre
     console.log("Nombre de lignes après filtre :", filteredData.length);
 
@@ -278,6 +293,11 @@ function updateApp() {
         const isCountry = d.COMEXVIANDE_DIM2_LIB !== "Monde" && d.COMEXVIANDE_DIM2_LIB !== "_UE" && d.COMEXVIANDE_DIM2_LIB !== "_PAYS TIERS";
         return matchYear && isCountry && matchMeat(d);
     });
+
+    // Appliquer la même conversion k€→€ au scaleData pour cohérence légende/couleurs
+    if (isEuro) {
+        scaleData = multiplyEuro(scaleData);
+    }
 
     drawWorldMap(filteredData, indicateur, "#map-background", globalData, scaleData);
     updateRanking(rankingData, indicateur, currentYear, isAllYears);
